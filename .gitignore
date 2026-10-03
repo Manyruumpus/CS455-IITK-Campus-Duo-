@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Generated builds and test output
+/frontend/dist/
+/frontend/dist-ssr/
+/frontend/coverage/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Logs
+logs/
+*.log
+
+# Local editor settings
+/frontend/.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini

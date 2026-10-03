@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #121316;
+    --bg-secondary: #181a1f;
+    --bg-card: #15171b;
+    --text-primary: #edeef0;
+    --text-secondary: #8a8f98;
+    --border-color: rgba(237, 238, 240, 0.08);
+    --focus-ring-color: #e06b3a;
+  }
+
+  [data-theme="light"] {
+    --bg-primary: #fbfbfa;
+    --bg-secondary: #f3f3f0;
+    --bg-card: #ffffff;
+    --text-primary: #202124;
+    --text-secondary: #5c5c5a;
+    --border-color: rgba(36, 36, 36, 0.12);
+    --focus-ring-color: #b85d26;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Universal accessible focus ring */
+  *:focus-visible {
+    outline: 2px solid var(--focus-ring-color);
+    outline-offset: 3px;
+  }
+}
+
+/* Reduced motion accessibility adherence */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Craft aesthetic custom utilities */
+.craft-radial-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(217, 119, 54, 0.15) 0%, transparent 60%);
+}
+
+.craft-border-glow {
+  box-shadow: 0 0 0 1px rgba(217, 119, 54, 0.25), 0 8px 24px -4px rgba(217, 119, 54, 0.12);
+}
+
+.craft-subtle-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(237, 238, 240, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(237, 238, 240, 0.03) 1px, transparent 1px);
+}
