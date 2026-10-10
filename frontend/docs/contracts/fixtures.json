@@ -1,0 +1,67 @@
+{
+  "valid": {
+    "session": {
+      "userId": "usr-student-alex",
+      "role": "ROLE_STUDENT",
+      "name": "Alex Rivera",
+      "isOnboarded": true,
+      "hasStudyConsent": true,
+      "hasSocialConsent": true
+    },
+    "bookingCreate": {
+      "clientOperationId": "op-demo-20261010-001",
+      "tableId": "tbl-pk-2f-10",
+      "locationId": "loc-pk-kelkar-2f",
+      "localDate": "2026-10-20",
+      "slotId": "slot-pk-10-14",
+      "companionStudentId": "usr-student-sam"
+    },
+    "notification": {
+      "notificationId": "notification-demo-001",
+      "recipientId": "usr-student-alex",
+      "eventType": "BOOKING_CREATED",
+      "mode": "STUDY",
+      "title": "Study booking confirmed",
+      "body": "Your study-table booking is confirmed.",
+      "isRead": false,
+      "timestamp": "2026-10-10T16:10:00.000Z",
+      "destination": {
+        "kind": "BOOKING",
+        "bookingId": "bk-demo-001"
+      }
+    },
+    "adminResource": {
+      "tableId": "tbl-demo-01",
+      "locationId": "loc-demo-01",
+      "tableNumber": "C-01",
+      "capacity": 2,
+      "hasPowerOutlets": true,
+      "active": true
+    }
+  },
+  "errors": [
+    {
+      "code": "FORBIDDEN",
+      "message": "Administrator role required",
+      "ui": "Show restricted state; do not retry or expose private data."
+    },
+    {
+      "code": "CONFLICT",
+      "message": "Future confirmed bookings prevent this resource change",
+      "ui": "Keep original data visible and require approved remediation."
+    },
+    {
+      "code": "UNCERTAIN_MUTATION",
+      "message": "Reservation committed but acknowledgement is uncertain",
+      "details": {
+        "clientOperationId": "op-demo-20261010-001"
+      },
+      "ui": "Show reconciliation action; do not claim failure or success."
+    },
+    {
+      "code": "SERVICE_UNAVAILABLE",
+      "message": "Production service adapter is unavailable",
+      "ui": "Show explicit unavailable state; no mock fallback in production."
+    }
+  ]
+}

@@ -17,7 +17,7 @@ export const AuthLayout: React.FC = () => {
         </Link>
 
         <div className="flex items-center gap-2">
-          <Badge variant="mono">IIT Kanpur SSO Portal</Badge>
+          <Badge variant="mono">Authentication</Badge>
           <Badge variant="warning">Demo Environment</Badge>
         </div>
       </header>
@@ -31,7 +31,7 @@ export const AuthLayout: React.FC = () => {
       <footer className="text-center text-xs text-craft-muted max-w-md mx-auto space-y-2">
         <div className="flex items-center justify-center gap-1.5 text-craft-subtle">
           <Shield className="w-3.5 h-3.5" />
-          <span>Demonstration Auth Mode · No live LDAP credentials stored</span>
+          <span>Authentication integration pending · Demonstration environment</span>
         </div>
         <p className="text-[11px] text-craft-subtle">
           Campus Duo is designed for enrolled IIT Kanpur students.

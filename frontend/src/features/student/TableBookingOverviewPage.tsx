@@ -5,9 +5,12 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { MOCK_LOCATIONS } from '@/mocks';
+import { useBookingLocations } from '@/queries';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { AppError } from '@/types';
 
 export const TableBookingOverviewPage: React.FC = () => {
+  const { data: locations, isLoading, isError, error, refetch } = useBookingLocations();
   return (
     <div className="space-y-6">
       <PageHeader
@@ -33,8 +36,17 @@ export const TableBookingOverviewPage: React.FC = () => {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {MOCK_LOCATIONS.map((loc) => (
+      {isLoading && <div className="p-12 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-ember-400" /></div>}
+      {isError && (
+        <div className="p-6 rounded-xl border border-red-900/50 bg-red-950/20 text-center space-y-3">
+          <AlertCircle className="w-8 h-8 text-red-400 mx-auto" />
+          <p className="text-sm text-red-200">Unable to load booking locations</p>
+          <p className="text-xs text-red-300">{error instanceof AppError ? error.message : 'A temporary service error occurred.'}</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button>
+        </div>
+      )}
+      {locations && <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {locations.map((loc) => (
           <Card key={loc.id} variant="default" className="flex flex-col justify-between">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -77,7 +89,7 @@ export const TableBookingOverviewPage: React.FC = () => {
             </CardFooter>
           </Card>
         ))}
-      </div>
+      </div>}
     </div>
   );
 };

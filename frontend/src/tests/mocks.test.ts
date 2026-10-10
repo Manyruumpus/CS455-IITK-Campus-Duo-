@@ -9,14 +9,15 @@ import {
 } from '../mocks';
 
 describe('Domain Fixtures & Data Integrity', () => {
-  it('provides valid student session with active roles', () => {
-    expect(MOCK_STUDENT_SESSION.userId).toBe('usr-student-210642');
+  it('provides synthetic student session free of personal identities', () => {
+    expect(MOCK_STUDENT_SESSION.userId).toBe('usr-student-alex');
+    expect(MOCK_STUDENT_SESSION.name).toBe('Alex Rivera');
     expect(MOCK_STUDENT_SESSION.role).toBe('ROLE_STUDENT');
-    expect(MOCK_STUDENT_SESSION.rollNumber).toBe('210642');
+    expect(MOCK_STUDENT_SESSION.rollNumber).toBe('200001');
   });
 
   it('provides valid admin session with administrative role', () => {
-    expect(MOCK_ADMIN_SESSION.userId).toBe('usr-admin-001');
+    expect(MOCK_ADMIN_SESSION.userId).toBe('usr-admin-senate');
     expect(MOCK_ADMIN_SESSION.role).toBe('ROLE_ADMIN');
   });
 
@@ -43,12 +44,24 @@ describe('Domain Fixtures & Data Integrity', () => {
     });
   });
 
-  it('demonstrates social privacy protection with masked handles until mutual connection', () => {
-    const unrevealedPeer = MOCK_SOCIAL_PEERS.find((p) => p.connectionStatus === 'NONE');
-    expect(unrevealedPeer?.maskedHandle).toContain('***');
-    expect(unrevealedPeer?.revealedContact).toBeUndefined();
+  it('asserts complete public social peer response shape and strict exclusion of contact-derived fields', () => {
+    expect(MOCK_SOCIAL_PEERS.length).toBeGreaterThan(0);
 
-    const mutualPeer = MOCK_SOCIAL_PEERS.find((p) => p.connectionStatus === 'MUTUAL_CONNECTED');
-    expect(mutualPeer?.revealedContact).toBeDefined();
+    MOCK_SOCIAL_PEERS.forEach((peer) => {
+      // Assert allowed public projection fields
+      expect(peer).toHaveProperty('id');
+      expect(peer).toHaveProperty('userId');
+      expect(peer).toHaveProperty('displayName');
+      expect(peer).toHaveProperty('bio');
+      expect(peer).toHaveProperty('interests');
+      expect(peer).toHaveProperty('connectionStatus');
+
+      // Assert contact-derived fields are strictly excluded
+      const peerRecord = peer as unknown as Record<string, unknown>;
+      expect(peerRecord.maskedHandle).toBeUndefined();
+      expect(peerRecord.revealedContact).toBeUndefined();
+      expect(peerRecord.email).toBeUndefined();
+      expect(peerRecord.phone).toBeUndefined();
+    });
   });
 });

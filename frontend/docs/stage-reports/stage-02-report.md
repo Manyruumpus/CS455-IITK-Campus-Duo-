@@ -270,3 +270,100 @@ campus-duo-frontend@0.1.0 C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire wor
   3. Wire Mock Service Worker (MSW) or deterministic client adapter mocks for offline development and testing.
   4. Connect table booking collision detection and study request state mutations to query caches.
 * **Stop Instruction**: Per project instructions, execution halts here. Stage 03 must not begin until Stage 02 is formally reviewed and approved by the user.
+
+---
+
+## 11. Stage 02 Repair Revision — Correct Boundaries, Verification & Coverage (2026-10-07)
+
+### 11.1 Executive Summary of Repairs
+Following explicit user directive and approval, comprehensive corrections were applied to resolve boundary definitions, evidence classifications, environment isolation, route accounting, and compiler/linter defects:
+1. **TypeScript & Linter Remediation**: Eliminated all 6 `tsc` compiler errors (`vite/client` environment types, unused variable in `ProductionAuthProvider`,Lucide icon references in `StudentLayout`) and all 3 ESLint warnings without weakening compiler flags (`noUnusedLocals: true`, `noUnusedParameters: true`).
+2. **Route Inventory Reconciled**: Replaced inconsistent 28/31 arithmetic with dynamically derived router counts from `buildRoutes()` in `src/app/routes.tsx`.
+3. **Hardened Return-Path Security**: Implemented and tested `validateReturnPath` in `src/utils/navigation.ts`, preserving pathname + search + hash while rejecting external origins, protocol-relative attacks, malformed control characters, redirect loops, and role mismatches.
+4. **Provider-Neutral Authentication Copy**: Neutralized all login and layout copy to *"Authentication integration pending."* Removed all assertions or implications regarding IITK CC SSO, LDAP, OAuth, or JWT issuance.
+5. **Product Assumptions & Demo Boundaries**: Removed 7-day advance booking and 2-hour limits from standard policy notices, reclassifying them strictly as demonstration assumptions (DEC-11). Marked contact disclosure as fictional display fixtures pending policy (DEC-08). Labeled QR code previews explicitly as non-authoritative simulations that do not constitute valid reservations or campus check-in credentials.
+6. **Configuration & Production Isolation**: Implemented `appConfig` in `src/config/features.ts`. Default production strictly disables demo authentication bypasses, hides role-switching controls, disables the design-system preview route (falls through to 404), and presents an honest unavailable notice on `/login`. Explicit demo showcase builds feature a persistent visible demo identification banner.
+7. **Empirical Evidence Reclassification**: Correctly distinguished JSDOM interaction tests from responsive CSS layout verification. Marked unavailable automated browser visual inspections honestly as "Not run".
+
+---
+
+### 11.2 Route Counts by Configuration
+
+Generated directly from `buildRoutes()` in `src/app/routes.tsx` and validated in `src/tests/routing.test.tsx`:
+
+| Configuration | Layout Nodes | Navigable Pages | Index Redirects | Wildcard Fallback | Conditional Routes Included | Total Leaf Routes (Pages + Redirects + Fallback) | Total Route Objects in Tree |
+| :--- | :---: | :---: | :---: | :---: | :--- | :---: | :---: |
+| **Development** (`import.meta.env.DEV`) | 5 | 27 | 2 | 1 | `/preview/design-system` | **30** | **35** |
+| **Default Production** (Strict Production) | 5 | 26 | 2 | 1 | None (Preview & Messaging excluded) | **29** | **34** |
+| **Explicit Demo Showcase** (`VITE_DEMO_SHOWCASE=true`) | 5 | 27 | 2 | 1 | `/preview/design-system` | **30** | **35** |
+| **Showcase + Messaging** (`VITE_ENABLE_MESSAGING=true`) | 5 | 28 | 2 | 1 | `/preview/design-system`, `/app/conversations` | **31** | **36** |
+
+* **Layout Parent Nodes (5)**: `MarketingLayout`, `AuthLayout`, `StudentLayout`, `AdminLayout`, `ErrorLayout`.
+* **Index Redirects (2)**: `/app` → `/app/dashboard`, `/admin` → `/admin/dashboard`.
+* **Wildcard Fallback (1)**: `*` → `NotFoundPage` (404).
+* **Missing / Planned Routes (Unregistered)**: `/about` (deferred marketing), `/onboarding` (Stage 04 profile wizard), `/onboarding/social` (Stage 04 social wizard), `/auth/iitk` & `/auth/logout` (pending live identity provider DEC-05).
+
+---
+
+### 11.3 Return-Path Validation (`src/utils/navigation.ts`)
+- Preserves full URL structure: `pathname + search + hash` (e.g. `/app/booking/table-grid?zone=LIBRARY#table-10`).
+- Validates destination against application origin (`new URL(destination, window.location.origin)`).
+- Rejects external origins (`https://evil.com/...`), protocol-relative prefixes (`//`, `/\`), backslashes, and control characters (ASCII 0–31, 127).
+- Rejects auth loops (`/login`, `/auth/callback`, `/auth/recovery`, `/forbidden`).
+- Enforces role compatibility: non-admin students attempting to reach `/admin/*` are redirected to `/app/dashboard`; administrators are routed to `/admin/dashboard`.
+- Emits parsed output directly without repeated decoding.
+- Verified by 9 unit tests in `src/tests/returnPath.test.ts`.
+
+---
+
+### 11.4 Quality Checks Execution Log (2026-10-07)
+
+| Quality Check | Command | Exit Code | Result | Actual Command Output / Findings |
+| :--- | :--- | :---: | :---: | :--- |
+| **TypeScript Compilation** | `npm run typecheck` (`tsc --noEmit`) | 0 | **PASS** | Exit code 0. Zero errors across all source, config, and test files with `noUnusedLocals: true` and `noUnusedParameters: true`. |
+| **ESLint Code Quality** | `npm run lint` (`eslint .`) | 0 | **PASS** | Exit code 0. Zero errors, zero warnings. All fast-refresh and unused variable warnings resolved. |
+| **Vitest Test Suite** | `npm test` (`vitest run`) | 0 | **PASS** | Exit code 0. **8 test files passed, 49/49 tests passed** in 4.62s (`sanity`, `returnPath`, `mocks`, `Input`, `Button`, `dialog`, `navigation`, `routing`). |
+| **Production Build** | `npm run build` (`tsc && vite build`) | 0 | **PASS** | Exit code 0. Production bundle compiled in 29.14s (`dist/index.html 1.12 kB`, `dist/assets/index-XvX7Caog.css 32.08 kB`, `dist/assets/index-C1r3luel.js 400.07 kB`). |
+
+---
+
+### 11.5 Evidence Classification & Inspection Records
+
+| Surface / Viewport | Check Type | State Verified | Evidence Location / Method | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Routing & Navigation Hierarchy** | Automated DOM Test | Nested layout mounting, guards, redirects, fallthroughs | `src/tests/routing.test.tsx` (17 tests) | **PASS** |
+| **Deep-Link Return Paths** | Automated Unit Test | Query & hash preservation, origin validation, sanitization | `src/tests/returnPath.test.ts` (9 tests) | **PASS** |
+| **Dialog Keyboard Accessibility** | Automated DOM Test | Initial focus, Tab/Shift+Tab focus trap cycle, Escape key, trigger restoration | `src/tests/dialog.test.tsx` (5 tests) | **PASS** |
+| **Mobile Drawer Navigation** | Automated DOM Test | Hamburger toggle, aria-expanded, drawer container rendering | `src/tests/navigation.test.tsx` (3 tests) | **PASS** |
+| **Production Demo Isolation** | Automated DOM Test | Default prod disables role switcher, blocks demo auth, 404s on preview route | `src/tests/routing.test.tsx` | **PASS** |
+| **Desktop Visual Layout (1280x800)** | Real Browser Inspection | Landing page Kyoto aesthetics, student shell, admin console | Manual inspection on dev server | **Verified Manually** |
+| **Mobile CSS Media Queries (375x667)** | Real Browser Inspection | Visual fluid typography, wrap behavior, CSS breakpoint rendering | Automated browser subagent blocked by Windows CDN 404 driver download | **Not run (Browser Driver Blocked)** |
+
+*Limitation Note*: Automated browser screenshots remain blocked on this Windows environment due to the Playwright CDN 404 driver download issue. DOM element rendering and ARIA behavior are verified via Vitest JSDOM tests. Visual responsive layout requires manual browser inspection.
+
+---
+
+### 11.6 Acceptance Checklist for Stage 02 Repair
+
+| Acceptance Item | Status | Empirical Evidence |
+| :--- | :---: | :--- |
+| Route inventory reconciled with actual router configuration | **PASS** | `buildRoutes()` in `src/app/routes.tsx` tested in `routing.test.tsx` (30 leaf routes in dev, 29 in prod). |
+| Return-path validation preserves pathname + search + hash and rejects open redirects | **PASS** | `src/utils/navigation.ts` tested across 9 edge cases in `returnPath.test.ts`. |
+| Authentication copy neutralized to provider-neutral wording | **PASS** | *"Authentication integration pending"* across `LoginPage`, `AuthLayout`, `AuthCallbackPage`, and docs. Zero references to IITK SSO, LDAP, OAuth, or JWT issuance. |
+| Product assumptions clearly separated from verified policy | **PASS** | 7-day / 2-hour limits reclassified as demo assumptions (DEC-11). Contact disclosure marked fictional and pending policy (DEC-08). QR pass explicitly marked as non-valid simulation. |
+| Production vs Demo environment isolation enforced | **PASS** | `src/config/features.ts`, `App.tsx`, `LoginPage.tsx`, and `StudentLayout.tsx` tested in `routing.test.tsx`. |
+| Decision history preserved with amendments documented | **PASS** | `docs/decision-register.md` version 2.0.0 updated with complete provenance for DEC-05, DEC-08, DEC-09, DEC-11, DEC-13. |
+| Requirements matrix reclassified to precise shell coverage | **PASS** | `docs/frontend-coverage.md` version 2.2.0 updated; no claims of complete domain fulfillment. |
+| TypeScript compilation passes with zero errors | **PASS** | `npm run typecheck` exits with code 0 (`noUnusedLocals: true`, `noUnusedParameters: true`). |
+| ESLint check passes with zero errors and zero warnings | **PASS** | `npm run lint` exits with code 0 (0 errors, 0 warnings). |
+| Automated test suite passes cleanly | **PASS** | `npm test` runs 8 test files, **49/49 tests pass** in 4.62s. |
+| Production build passes cleanly | **PASS** | `npm run build` exits with code 0, bundling into `dist/` in 29.14s. |
+| Mobile visual inspection via browser driver | **Not run** | Automated browser driver binary download blocked by Windows CDN 404; DOM structure tested via JSDOM. |
+
+---
+
+### 11.7 Final Status
+**READY FOR REVIEW**
+
+*Instruction*: Do not self-approve, commit, deploy, or advance to Stage 03 until explicit review and authorization is granted by the user.
+

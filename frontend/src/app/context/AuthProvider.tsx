@@ -1,14 +1,16 @@
 import React, { ReactNode } from 'react';
+import { appConfig } from '@/config/features';
 import { DemoAuthProvider } from './DemoAuthContext';
+import { ProductionAuthProvider } from './ProductionAuthProvider';
 
 /**
- * ProductionAuthProvider
- *
- * Stub provider used in production builds to ensure that the development-only
- * demo session switcher and bypasses are completely disabled.
- * In development and preview demo mode, DemoAuthProvider is active.
+ * Top-level application authentication provider.
+ * Automatically chooses ProductionAuthProvider in default production builds,
+ * or DemoAuthProvider when running in development or explicit demo showcase mode.
  */
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // In development mode or demo builds, use DemoAuthProvider
+  if (!appConfig.isDemoAuthEnabled) {
+    return <ProductionAuthProvider>{children}</ProductionAuthProvider>;
+  }
   return <DemoAuthProvider>{children}</DemoAuthProvider>;
 };

@@ -26,3 +26,12 @@ logs/
 .DS_Store
 Thumbs.db
 Desktop.ini
+# Local AI-tool state
+/frontend/.gemini/
+/frontend/.gsd/
+
+# Additional generated test output
+/frontend/test-results/
+/frontend/playwright-report/
+__pycache__/
+*.pyc

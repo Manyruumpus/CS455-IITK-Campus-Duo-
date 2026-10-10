@@ -12,21 +12,23 @@ import {
 } from '@/types';
 
 export const MOCK_STUDENT_SESSION: UserSession = {
-  userId: 'usr-student-210642',
-  email: 'mohit@iitk.ac.in',
-  name: 'Mohit Kumar',
-  rollNumber: '210642',
+  userId: 'usr-student-alex',
+  email: 'alex.rivera@campusduo.test',
+  name: 'Alex Rivera',
+  rollNumber: '200001',
   role: 'ROLE_STUDENT',
   isOnboarded: true,
+  hasStudyConsent: true,
   hasSocialConsent: true,
 };
 
 export const MOCK_ADMIN_SESSION: UserSession = {
-  userId: 'usr-admin-001',
-  email: 'senate-admin@iitk.ac.in',
-  name: 'Student Senate Admin',
+  userId: 'usr-admin-senate',
+  email: 'senate.mod@campusduo.test',
+  name: 'Senate Moderator',
   role: 'ROLE_ADMIN',
   isOnboarded: true,
+  hasStudyConsent: false,
   hasSocialConsent: false,
 };
 
@@ -104,8 +106,8 @@ export const MOCK_STUDY_PROFILES: StudyProfile[] = [
 export const MOCK_SOCIAL_PEERS: SocialPeerProfile[] = [
   {
     id: 'soc-peer-01',
-    userId: 'usr-soc-01',
-    displayName: 'Vikram Mehta',
+    userId: 'usr-student-jordan',
+    displayName: 'Jordan Lee',
     bio: 'Passionate about autonomous drones, robotics club, and late-night table tennis.',
     interests: [
       { id: 'tag-robotics', name: 'Robotics', category: 'TECH_ACADEMIC' },
@@ -113,12 +115,11 @@ export const MOCK_SOCIAL_PEERS: SocialPeerProfile[] = [
       { id: 'tag-anime', name: 'Anime', category: 'CAMPUS_LIFE' },
     ],
     connectionStatus: 'NONE',
-    maskedHandle: 'v***@iitk.ac.in',
   },
   {
     id: 'soc-peer-02',
-    userId: 'usr-soc-02',
-    displayName: 'Ananya Gupta',
+    userId: 'usr-student-taylor',
+    displayName: 'Taylor Brooks',
     bio: 'Western music vocalist, occasional chess player, and open-source enthusiast.',
     interests: [
       { id: 'tag-music', name: 'Western Music', category: 'CULTURAL_ARTS' },
@@ -126,10 +127,6 @@ export const MOCK_SOCIAL_PEERS: SocialPeerProfile[] = [
       { id: 'tag-opensource', name: 'Open Source', category: 'TECH_ACADEMIC' },
     ],
     connectionStatus: 'MUTUAL_CONNECTED',
-    revealedContact: {
-      platform: 'TELEGRAM',
-      handle: '@ananya_iitk',
-    },
   },
 ];
 
@@ -183,3 +180,7 @@ export const MOCK_TABLE_SLOTS: StudyTableSlot[] = [
     reservedCount: 2,
   },
 ];
+
+export * from './store';
+export * from './scenarios';
+

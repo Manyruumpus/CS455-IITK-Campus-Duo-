@@ -77,6 +77,35 @@ describe('Accessible Dialog Component', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('traps focus using Tab and Shift+Tab key navigation', () => {
+    render(
+      <Dialog isOpen={true} onClose={vi.fn()} title="Focus Trap Test">
+        <button id="btn-1">First Child</button>
+        <button id="btn-2">Second Child</button>
+      </Dialog>
+    );
+
+    const closeBtn = screen.getByRole('button', { name: /close dialog/i });
+    const btn1 = screen.getByRole('button', { name: /first child/i });
+    const btn2 = screen.getByRole('button', { name: /second child/i });
+    expect(btn1).toBeInTheDocument();
+
+    // Close button is rendered in the header, then btn1, then btn2
+    // Focus last element (btn2) and press Tab -> should wrap to first element (closeBtn)
+    btn2.focus();
+    expect(document.activeElement).toBe(btn2);
+
+    fireEvent.keyDown(document, { key: 'Tab', code: 'Tab' });
+    expect(document.activeElement).toBe(closeBtn);
+
+    // Focus first element (closeBtn) and press Shift+Tab -> should wrap to last element (btn2)
+    closeBtn.focus();
+    expect(document.activeElement).toBe(closeBtn);
+
+    fireEvent.keyDown(document, { key: 'Tab', code: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(btn2);
+  });
+
   it('renders ConfirmationDialog with confirm and cancel buttons', () => {
     const handleConfirm = vi.fn();
     const handleClose = vi.fn();

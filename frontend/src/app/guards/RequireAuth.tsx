@@ -17,7 +17,8 @@ export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to={`/login?from=${encodeURIComponent(location.pathname)}`} replace />;
+    const fullPath = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/login?from=${encodeURIComponent(fullPath)}`} replace />;
   }
 
   return <>{children}</>;

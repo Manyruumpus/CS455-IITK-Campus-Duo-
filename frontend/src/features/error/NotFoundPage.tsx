@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 
 export const NotFoundPage: React.FC = () => {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5" data-testid="not-found-page">
       <div className="w-16 h-16 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-craft-muted mx-auto">
         <Compass className="w-8 h-8 text-ember-400" />
       </div>

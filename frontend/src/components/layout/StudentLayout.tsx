@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Link, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   BookOpen,
@@ -18,12 +18,33 @@ import {
 import { useDemoAuth } from '@/app/context/DemoAuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { appConfig } from '@/config/features';
+import { useUnreadNotificationCount } from '@/queries/notificationHooks';
+
+interface NavItem {
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string;
+}
 
 export const StudentLayout: React.FC = () => {
-  const { session, switchRole, logout } = useDemoAuth();
+  const { session, switchRole, logout, isDemoAuthEnabled } = useDemoAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { data: unreadCount } = useUnreadNotificationCount();
+
+  // If student is incomplete, route to /onboarding while preserving /app/settings and logout (Amendment 7)
+  if (
+    session?.role === 'ROLE_STUDENT' &&
+    session.isOnboarded === false &&
+    !location.pathname.startsWith('/app/settings')
+  ) {
+    const fullPath = `${location.pathname}${location.search}${location.hash}`;
+    return <Navigate to={`/onboarding?from=${encodeURIComponent(fullPath)}`} replace />;
+  }
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
@@ -31,15 +52,18 @@ export const StudentLayout: React.FC = () => {
     document.documentElement.setAttribute('data-theme', nextTheme);
   };
 
-  const navItems = [
+  const navItems: NavItem[] = [
     { label: 'Dashboard', path: '/app/dashboard', icon: LayoutDashboard },
     { label: 'Study Matching', path: '/app/study', icon: BookOpen },
     { label: 'Social Discovery', path: '/app/social', icon: Users },
     { label: 'Table Reservations', path: '/app/booking', icon: Calendar },
-    { label: 'Notifications', path: '/app/notifications', icon: Bell, badge: '2' },
+    ...(appConfig.isMessagingEnabled
+      ? [{ label: 'Conversations', path: '/app/conversations', icon: MessageSquare }]
+      : []),
+    ...(unreadCount
+      ? [{ label: 'Notifications', path: '/app/notifications', icon: Bell, badge: String(unreadCount) }]
+      : [{ label: 'Notifications', path: '/app/notifications', icon: Bell }]),
     { label: 'Settings & Privacy', path: '/app/settings', icon: Settings },
-    // Excluded from primary navigation per DEC-08 (Open decision: chat vs handle exchange).
-    // The route /app/conversations remains registered for direct preview, but is not promoted in the sidebar.
   ];
 
   return (
@@ -81,34 +105,36 @@ export const StudentLayout: React.FC = () => {
 
         {/* Right: Demo Role Switcher, Alerts, Theme, User Profile */}
         <div className="flex items-center gap-2.5">
-          {/* Demo Role Switcher (Clearly labelled for development preview) */}
-          <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-md bg-craft-surface border border-craft-border text-[11px] font-mono">
-            <span className="text-craft-subtle pl-1.5">Role:</span>
-            <button
-              onClick={() => switchRole('ROLE_STUDENT')}
-              className="px-2 py-0.5 rounded bg-ember-600 text-white font-medium"
-            >
-              Student
-            </button>
-            <button
-              onClick={() => {
-                switchRole('ROLE_ADMIN');
-                navigate('/admin/dashboard');
-              }}
-              className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
-            >
-              Admin
-            </button>
-            <button
-              onClick={() => {
-                switchRole('SIGNED_OUT');
-                navigate('/login');
-              }}
-              className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
-            >
-              Sign Out
-            </button>
-          </div>
+          {/* Demo Role Switcher (Visible ONLY when demo authentication is enabled) */}
+          {isDemoAuthEnabled && (
+            <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-md bg-craft-surface border border-craft-border text-[11px] font-mono">
+              <span className="text-craft-subtle pl-1.5">Role:</span>
+              <button
+                onClick={() => switchRole('ROLE_STUDENT')}
+                className="px-2 py-0.5 rounded bg-ember-600 text-white font-medium"
+              >
+                Student
+              </button>
+              <button
+                onClick={() => {
+                  switchRole('ROLE_ADMIN');
+                  navigate('/admin/dashboard');
+                }}
+                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
+              >
+                Admin
+              </button>
+              <button
+                onClick={() => {
+                  switchRole('SIGNED_OUT');
+                  navigate('/login');
+                }}
+                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
+              >
+                Sign Out
+              </button>
+            </div>
+          )}
 
           {/* Theme Toggle */}
           <Button
@@ -118,29 +144,37 @@ export const StudentLayout: React.FC = () => {
             title="Toggle theme"
             aria-label="Toggle theme"
           >
-            {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
 
-          {/* User Badge / Avatar */}
-          <div className="flex items-center gap-2 pl-1 border-l border-craft-border">
-            <div className="w-7 h-7 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-semibold text-ember-400">
-              {session?.name ? session.name.charAt(0) : 'U'}
-            </div>
-            <div className="hidden xl:block text-left">
-              <p className="text-xs font-medium text-craft-ink leading-none">{session?.name || 'Student'}</p>
-              <p className="text-[10px] text-craft-muted font-mono mt-0.5">{session?.rollNumber || '210642'}</p>
-            </div>
-          </div>
+          {/* User Profile Pill */}
+          {session ? (
+            <Link
+              to="/app/profile"
+              className="flex items-center gap-2 pl-2 pr-2.5 py-1 rounded-full border border-craft-border hover:border-craft-borderCraft bg-craft-surface text-xs transition-colors"
+            >
+              <div className="w-6 h-6 rounded-full bg-ember-600/30 border border-ember-500/50 flex items-center justify-center text-[10px] font-bold text-ember-400">
+                {session.name.charAt(0)}
+              </div>
+              <span className="font-medium text-craft-ink hidden sm:inline">{session.name}</span>
+            </Link>
+          ) : (
+            <Link to="/login">
+              <Button variant="ember" size="sm">
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
       </header>
 
       {/* Main Body with Sidebar */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Desktop Sidebar */}
+        {/* Desktop Sidebar Navigation */}
         <aside
           id="student-sidebar"
           aria-label="Student Navigation"
-          className="hidden md:flex flex-col w-56 border-r border-craft-border bg-craft-surface/50 p-3 shrink-0"
+          className="hidden md:flex flex-col w-60 border-r border-craft-border bg-craft-bg shrink-0 p-4 space-y-4"
         >
           <nav className="space-y-1 flex-1">
             {navItems.map((item) => {
@@ -164,11 +198,6 @@ export const StudentLayout: React.FC = () => {
                   {item.badge && (
                     <span className="w-4 h-4 rounded-full bg-ember-600 text-white text-[10px] flex items-center justify-center font-mono">
                       {item.badge}
-                    </span>
-                  )}
-                  {item.flag && (
-                    <span className="text-[9px] px-1 rounded bg-zinc-800 text-zinc-400 font-mono">
-                      FLAG
                     </span>
                   )}
                 </NavLink>

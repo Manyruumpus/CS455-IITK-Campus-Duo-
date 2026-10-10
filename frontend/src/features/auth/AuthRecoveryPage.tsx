@@ -13,12 +13,12 @@ export const AuthRecoveryPage: React.FC = () => {
         </div>
         <CardTitle>Session Recovery</CardTitle>
         <CardDescription>
-          Simulating recovery for an expired campus session token.
+          Authentication integration pending — session recovery simulation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-xs text-craft-muted leading-relaxed">
         <p>
-          In production, session refresh tokens are exchanged silently in the background. If a session token expires while editing a form, Campus Duo preserves dirty inputs and prompts seamless re-authentication.
+          Simulating recovery for an expired demonstration session. In future stages, when an authentication provider is connected, session expiration will handle non-destructive recovery to preserve user inputs.
         </p>
       </CardContent>
       <CardFooter className="flex justify-end gap-2">

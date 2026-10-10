@@ -25,19 +25,19 @@ export const AuthCallbackPage: React.FC = () => {
   return (
     <Card variant="default">
       <CardHeader className="text-center">
-        <CardTitle>Processing Campus SSO Callback</CardTitle>
+        <CardTitle>Authentication Simulation</CardTitle>
         <CardDescription>
-          Simulating OAuth2 authorization code exchange and session hydration.
+          Authentication integration pending — simulating demonstration session hydration.
         </CardDescription>
       </CardHeader>
       <CardContent className="text-center space-y-4">
         {isProcessing ? (
-          <LoadingSkeleton lines={2} label="Exchanging OAuth authorization code..." />
+          <LoadingSkeleton lines={2} label="Processing demonstration authentication callback..." />
         ) : (
           <div className="space-y-2 py-4">
             <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
             <p className="text-xs font-semibold text-craft-ink">
-              Authentication Successful! Redirecting to student dashboard...
+              Demo Session Initialized. Redirecting to student dashboard...
             </p>
             <Link to="/app/dashboard" className="text-xs text-ember-400 underline block">
               Click here if not redirected automatically

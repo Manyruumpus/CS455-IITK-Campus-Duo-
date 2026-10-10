@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/campus-duo/frontend-capability-contract.schema.json",
+  "title": "Campus Duo Frontend Capability Contract",
+  "type": "object",
+  "required": ["capability", "mode", "request", "response", "errors"],
+  "properties": {
+    "capability": {
+      "type": "string",
+      "enum": ["auth", "profile", "study", "social", "connection", "booking", "notification", "moderation", "admin", "conversation"]
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["mock", "proposed-production"]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "response": {
+      "type": ["object", "array", "null"],
+      "additionalProperties": true
+    },
+    "operationId": {
+      "type": ["string", "null"]
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": ["UNAUTHENTICATED", "FORBIDDEN", "NOT_FOUND", "CONFLICT", "VALIDATION_ERROR", "SERVICE_UNAVAILABLE", "AGENT_FAILED", "UNCERTAIN_MUTATION", "UNSUPPORTED_ACTION", "CANCELLED"]
+          },
+          "message": { "type": "string" },
+          "details": { "type": "object", "additionalProperties": true }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
