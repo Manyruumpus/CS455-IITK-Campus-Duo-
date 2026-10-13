@@ -1,0 +1,68 @@
+\set ON_ERROR_STOP on
+
+\echo 'Campus Duo bootstrap preflight: checking target roles and database before any writes.'
+
+DO $preflight$
+DECLARE
+    existing_objects text[] := ARRAY[]::text[];
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'campus_duo_migrator') THEN
+        existing_objects := array_append(existing_objects, 'role campus_duo_migrator');
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'campus_duo_app') THEN
+        existing_objects := array_append(existing_objects, 'role campus_duo_app');
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_database WHERE datname = 'campus_duo_dev') THEN
+        existing_objects := array_append(existing_objects, 'database campus_duo_dev');
+    END IF;
+
+    IF cardinality(existing_objects) > 0 THEN
+        RAISE EXCEPTION
+            'Bootstrap refused: target object(s) already exist: %. No writes were performed. Preserve existing objects and review recovery/reuse separately.',
+            array_to_string(existing_objects, ', ');
+    END IF;
+END
+$preflight$;
+
+\echo 'Preflight passed. Creating password-free project roles.'
+
+CREATE ROLE campus_duo_migrator
+    LOGIN
+    NOSUPERUSER
+    NOCREATEDB
+    NOCREATEROLE
+    NOREPLICATION
+    NOBYPASSRLS;
+
+CREATE ROLE campus_duo_app
+    LOGIN
+    NOSUPERUSER
+    NOCREATEDB
+    NOCREATEROLE
+    NOREPLICATION
+    NOBYPASSRLS;
+
+\echo 'Creating campus_duo_dev outside a transaction block.'
+
+CREATE DATABASE campus_duo_dev
+    OWNER campus_duo_migrator;
+
+\echo 'Restricting database and schema defaults.'
+
+REVOKE ALL ON DATABASE campus_duo_dev FROM PUBLIC;
+GRANT CONNECT ON DATABASE campus_duo_dev
+    TO campus_duo_migrator, campus_duo_app;
+
+\connect campus_duo_dev
+
+CREATE SCHEMA campus_duo
+    AUTHORIZATION campus_duo_migrator;
+
+REVOKE ALL ON SCHEMA campus_duo FROM PUBLIC;
+REVOKE ALL ON SCHEMA public FROM PUBLIC;
+GRANT USAGE ON SCHEMA campus_duo TO campus_duo_app;
+
+\echo 'Bootstrap complete. No business tables, sequences, functions, or default table grants were created.'
+\echo 'Set role passwords interactively before password-authenticated login verification.'

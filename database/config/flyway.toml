@@ -1,0 +1,20 @@
+[flyway]
+environment = "default"
+
+[environments.default]
+url = "jdbc:postgresql://localhost:5432/campus_duo_dev"
+user = "campus_duo_migrator"
+schemas = ["campus_duo"]
+
+[environments.default.flyway]
+defaultSchema = "campus_duo"
+table = "flyway_schema_history"
+locations = ["filesystem:database/migrations"]
+createSchemas = false
+cleanDisabled = true
+baselineOnMigrate = false
+validateOnMigrate = true
+validateMigrationNaming = true
+outOfOrder = false
+mixed = false
+executeInTransaction = true

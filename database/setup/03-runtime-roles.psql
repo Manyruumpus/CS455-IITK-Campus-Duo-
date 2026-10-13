@@ -1,0 +1,109 @@
+\set ON_ERROR_STOP on
+
+\echo 'DB-07A requires a cluster/database administrator connected to campus_duo_dev.'
+BEGIN;
+
+DO $preflight$
+DECLARE
+    role_name name;
+    role_oid oid;
+BEGIN
+    IF current_database() <> 'campus_duo_dev' THEN
+        RAISE EXCEPTION 'DB-07A refused: connected database is %, expected campus_duo_dev.', current_database();
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_roles WHERE rolname = current_user AND rolsuper
+    ) THEN
+        RAISE EXCEPTION 'DB-07A requires a superuser/database administrator; current_user is %. ', current_user;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_namespace
+         WHERE nspname = 'campus_duo'
+           AND nspowner = 'campus_duo_migrator'::regrole
+    ) THEN
+        RAISE EXCEPTION 'DB-07A refused: campus_duo must exist and be owned by campus_duo_migrator.';
+    END IF;
+
+    FOREACH role_name IN ARRAY ARRAY[
+        'campus_duo_migrator'::name, 'campus_duo_app'::name
+    ] LOOP
+        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+            RAISE EXCEPTION 'DB-07A refused: required existing role % is missing.', role_name;
+        END IF;
+    END LOOP;
+
+    FOREACH role_name IN ARRAY ARRAY[
+        'campus_duo_admin_service'::name, 'campus_duo_worker'::name
+    ] LOOP
+        SELECT oid INTO role_oid
+          FROM pg_roles
+         WHERE rolname = role_name;
+        IF NOT FOUND THEN
+            CONTINUE;
+        END IF;
+
+        IF EXISTS (
+            SELECT 1 FROM pg_roles
+             WHERE rolname = role_name
+               AND (
+                   NOT rolcanlogin OR NOT rolinherit OR rolsuper OR rolcreatedb
+                   OR rolcreaterole OR rolreplication OR rolbypassrls
+               )
+        ) OR EXISTS (
+            SELECT 1
+              FROM pg_auth_members m
+              JOIN pg_roles r ON r.oid = m.member
+             WHERE r.rolname = role_name
+        ) THEN
+            RAISE EXCEPTION
+                'DB-07A refused: role % has incompatible attributes or memberships; nothing was repaired.',
+                role_name;
+        END IF;
+        IF has_schema_privilege(role_oid, 'campus_duo', 'CREATE') THEN
+            RAISE EXCEPTION
+                'DB-07A refused: existing runtime role % has effective schema CREATE.',
+                role_name;
+        END IF;
+    END LOOP;
+
+    IF EXISTS (
+        SELECT 1
+          FROM aclexplode(COALESCE(
+              (SELECT nspacl FROM pg_namespace WHERE nspname = 'campus_duo'),
+              acldefault('n', 'campus_duo_migrator'::regrole)
+          )) a
+         WHERE a.grantee = 0 AND (a.privilege_type = 'USAGE' OR a.privilege_type = 'CREATE')
+    ) THEN
+        RAISE EXCEPTION 'DB-07A refused: PUBLIC has inherited campus_duo schema access; review it before provisioning.';
+    END IF;
+END
+$preflight$;
+
+SELECT format(
+    'CREATE ROLE %I LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS',
+    role_name
+)
+FROM (VALUES ('campus_duo_admin_service'::name), ('campus_duo_worker'::name)) v(role_name)
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles r WHERE r.rolname = v.role_name)
+\gexec
+
+GRANT CONNECT ON DATABASE campus_duo_dev
+    TO campus_duo_admin_service, campus_duo_worker;
+GRANT USAGE ON SCHEMA campus_duo
+    TO campus_duo_admin_service, campus_duo_worker;
+
+DO $postcheck$
+BEGIN
+    IF has_database_privilege('campus_duo_admin_service', 'campus_duo_dev', 'CREATE')
+       OR has_database_privilege('campus_duo_worker', 'campus_duo_dev', 'CREATE')
+       OR has_schema_privilege('campus_duo_admin_service', 'campus_duo', 'CREATE')
+       OR has_schema_privilege('campus_duo_worker', 'campus_duo', 'CREATE') THEN
+        RAISE EXCEPTION 'DB-07A failed: runtime roles have forbidden effective CREATE access.';
+    END IF;
+END
+$postcheck$;
+
+COMMIT;
+\echo 'DB-07A role provisioning completed. Password setup remains a separate private administrator action.'
