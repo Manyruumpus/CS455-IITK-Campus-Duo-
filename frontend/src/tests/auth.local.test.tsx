@@ -9,7 +9,7 @@ import { StudentLayout } from '@/components/layout/StudentLayout';
 import { ForbiddenPage } from '@/features/error/ForbiddenPage';
 import { MOCK_STUDENT_SESSION } from '@/mocks';
 
-function renderWithProviders(ui: React.ReactElement, initialSession: any = null) {
+function renderWithProviders(ui: React.ReactElement, initialSession: any = null, initialEntry: string = '/login?test_auth=password') {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -17,7 +17,7 @@ function renderWithProviders(ui: React.ReactElement, initialSession: any = null)
   return render(
     <QueryClientProvider client={queryClient}>
       <DemoAuthProvider initialSession={initialSession} isDemoAuthEnabled={true}>
-        <MemoryRouter initialEntries={['/login']}>
+        <MemoryRouter initialEntries={[initialEntry]}>
           <Routes>
             <Route path="/login" element={ui} />
             <Route path="/app/dashboard" element={<div>Dashboard Screen</div>} />
@@ -35,7 +35,15 @@ describe('Frontend Local Auth & RBAC Security Suite', () => {
   });
 
   describe('1. LoginPage IITK Account Lifecycle Form', () => {
-    it('renders Sign In and Register tabs with IITK email inputs', () => {
+    it('disables password authentication in normal production entry without test harness flag', () => {
+      renderWithProviders(<LoginPage />, null, '/login');
+
+      expect(screen.queryByLabelText(/^password$/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^password$/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /request login otp/i })).toBeInTheDocument();
+    });
+
+    it('renders Sign In and Register tabs with IITK email inputs in test harness mode', () => {
       renderWithProviders(<LoginPage />);
 
       expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();

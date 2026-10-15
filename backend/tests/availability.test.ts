@@ -1,16 +1,20 @@
-import { describe, it, expect, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
-import { closeDbPool } from '../src/config/db';
+import { closeDbPool, query } from '../src/config/db';
 
 const VALID_ACTOR_ID = '00000000-0000-0000-0000-00000000D501'; // Dev Student Alex
 const SEED_LOCATION_ID = '00000000-0000-0000-0000-00000000D571';
 const SEED_DATE = '2026-11-14';
 
 describe('GET /api/booking/availability', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     process.env.NODE_ENV = 'development';
     process.env.ALLOW_TEST_HARNESS_AUTH = 'true';
+    await query(`UPDATE campus_duo.study_location SET active = true WHERE location_id = $1`, [SEED_LOCATION_ID]);
+    await query(`UPDATE campus_duo.study_table SET active = true WHERE location_id = $1`, [SEED_LOCATION_ID]);
+    await query(`UPDATE campus_duo.study_slot SET active = true, status = 'AVAILABLE' WHERE location_id = $1`, [SEED_LOCATION_ID]);
+    await query(`UPDATE campus_duo.booking SET status = 'CONFIRMED', cancelled_at = NULL, cancelled_by = NULL, cancellation_reason = NULL WHERE booking_id = '00000000-0000-0000-0000-00000000d581'`);
   });
 
   afterAll(async () => {

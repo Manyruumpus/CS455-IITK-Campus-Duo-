@@ -12,9 +12,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@types/nodemailer": "^8.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "nodemailer": "^10.1.1",
     "pg": "^8.13.3"
   },
   "devDependencies": {

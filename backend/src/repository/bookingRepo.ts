@@ -355,6 +355,7 @@ export class BookingRepository {
       correlationId: string;
       operationId: string;
       safeReason: string;
+      action?: string;
     }
   ): Promise<void> {
     const sql = `
@@ -362,7 +363,7 @@ export class BookingRepository {
         actor_user_id, actor_role, action, target_type, target_id, outcome,
         correlation_id, operation_id, safe_reason
       ) VALUES (
-        $1, $2, 'BOOKING_CREATED', 'BOOKING', $3, 'SUCCESS',
+        $1, $2, $7, 'BOOKING', $3, 'SUCCESS',
         $4, $5, $6
       );
     `;
@@ -372,7 +373,8 @@ export class BookingRepository {
       params.targetId,
       params.correlationId,
       params.operationId,
-      params.safeReason
+      params.safeReason,
+      params.action || 'BOOKING_CREATED'
     ]);
   }
 
@@ -383,20 +385,22 @@ export class BookingRepository {
       dedupeKey: string;
       payload: any;
       correlationId: string;
+      eventType?: string;
     }
   ): Promise<void> {
     const sql = `
       INSERT INTO campus_duo.outbox_event (
         event_type, aggregate_type, aggregate_id, dedupe_key, payload, correlation_id
       ) VALUES (
-        'BOOKING_CREATED', 'BOOKING', $1, $2, $3, $4
+        $5, 'BOOKING', $1, $2, $3, $4
       );
     `;
     await client.query(sql, [
       params.aggregateId,
       params.dedupeKey,
       JSON.stringify(params.payload),
-      params.correlationId
+      params.correlationId,
+      params.eventType || 'BOOKING_CREATED'
     ]);
   }
 
@@ -409,6 +413,7 @@ export class BookingRepository {
       outcomeStatus: string;
       bookingId: string;
       responseReference: any;
+      operationType?: string;
     }
   ): Promise<void> {
     const sql = `
@@ -416,7 +421,7 @@ export class BookingRepository {
         actor_user_id, operation_type, client_operation_id, request_fingerprint,
         outcome_status, booking_id, response_reference
       ) VALUES (
-        $1, 'CREATE_BOOKING', $2, $3, $4, $5, $6
+        $1, $7, $2, $3, $4, $5, $6
       );
     `;
     await client.query(sql, [
@@ -425,8 +430,167 @@ export class BookingRepository {
       params.requestFingerprint,
       params.outcomeStatus,
       params.bookingId,
-      JSON.stringify(params.responseReference)
+      JSON.stringify(params.responseReference),
+      params.operationType || 'CREATE_BOOKING'
     ]);
+  }
+
+  /**
+   * Locks the booking row FOR UPDATE and returns its current details and active participants.
+   */
+  async findBookingForUpdate(
+    client: PoolClient,
+    bookingId: string
+  ): Promise<(DbBookingRow & { participants: DbBookingParticipantJson[] }) | null> {
+    const lockSql = `
+      SELECT booking_id, connection_id, booker_id, table_id, location_id, slot_id,
+             local_date, status, partner_approval_status, booking_version,
+             created_at, updated_at
+      FROM campus_duo.booking
+      WHERE booking_id = $1
+      FOR UPDATE;
+    `;
+    const res = await client.query<DbBookingRow>(lockSql, [bookingId]);
+    if (res.rows.length === 0) return null;
+    const booking = res.rows[0];
+
+    const partSql = `
+      SELECT p.user_id AS "userId", u.display_name AS "displayName", p.participant_role AS "role",
+             p.joined_at::text AS "joinedAt", p.removed_at::text AS "removedAt"
+      FROM campus_duo.booking_participant p
+      JOIN campus_duo.user_account u ON u.user_id = p.user_id
+      WHERE p.booking_id = $1 AND p.removed_at IS NULL
+      ORDER BY p.participant_role, p.user_id;
+    `;
+    const partRes = await client.query<DbBookingParticipantJson>(partSql, [bookingId]);
+    return {
+      ...booking,
+      participants: partRes.rows
+    };
+  }
+
+  /**
+   * Updates an existing booking row to CANCELLED within the active transaction.
+   * Satisfies check constraint booking_cancel_fields_ck.
+   */
+  async cancelBookingInTx(
+    client: PoolClient,
+    bookingId: string,
+    actorUserId: string,
+    reason: string
+  ): Promise<DbBookingRow> {
+    const sql = `
+      UPDATE campus_duo.booking
+      SET status = 'CANCELLED',
+          cancelled_at = now(),
+          cancelled_by = $2,
+          cancellation_reason = $3,
+          booking_version = booking_version + 1,
+          updated_at = now()
+      WHERE booking_id = $1
+      RETURNING booking_id, connection_id, booker_id, table_id, location_id, slot_id, local_date,
+                status, partner_approval_status, booking_version, created_at, updated_at;
+    `;
+    const res = await client.query<DbBookingRow>(sql, [bookingId, actorUserId, reason]);
+    return res.rows[0];
+  }
+
+  /**
+   * Checks whether a booking has already been rescheduled into a direct successor.
+   * Enforces partial unique index booking_direct_successor_uk at the service level.
+   */
+  async hasDirectSuccessor(client: PoolClient, bookingId: string): Promise<boolean> {
+    const sql = `
+      SELECT 1 FROM campus_duo.booking
+      WHERE rescheduled_from_booking_id = $1;
+    `;
+    const res = await client.query(sql, [bookingId]);
+    return res.rows.length > 0;
+  }
+
+  /**
+   * Finds a study slot and its related table/location details by slot_id and local_date.
+   */
+  async findSlotBySlotIdAndDate(
+    client: PoolClient,
+    slotId: string,
+    localDate: string
+  ): Promise<DbSlotValidationRow | null> {
+    const sql = `
+      SELECT s.slot_id, s.table_id, s.location_id, s.local_date, s.start_time, s.end_time, s.status, s.active,
+             t.table_number, t.capacity, t.active AS table_active,
+             l.name AS location_name, l.active AS location_active
+      FROM campus_duo.study_slot s
+      JOIN campus_duo.study_table t ON t.table_id = s.table_id
+      JOIN campus_duo.study_location l ON l.location_id = s.location_id
+      WHERE s.slot_id = $1
+        AND s.local_date = $2;
+    `;
+    const res = await client.query<DbSlotValidationRow>(sql, [slotId, localDate]);
+    return res.rows[0] || null;
+  }
+
+  /**
+   * Inserts a new booking row that is linked as a direct successor of a previous booking.
+   */
+  async insertRescheduledBooking(
+    client: PoolClient,
+    params: {
+      connectionId: string;
+      bookerId: string;
+      tableId: string;
+      locationId: string;
+      slotId: string;
+      localDate: string;
+      bookingVersion: number;
+      rescheduledFromBookingId: string;
+    }
+  ): Promise<DbBookingRow> {
+    const sql = `
+      INSERT INTO campus_duo.booking (
+        connection_id,
+        booker_id,
+        table_id,
+        location_id,
+        slot_id,
+        local_date,
+        status,
+        partner_approval_status,
+        booking_version,
+        rescheduled_from_booking_id
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, 'CONFIRMED', 'NOT_REQUIRED', $7, $8
+      ) RETURNING booking_id, connection_id, booker_id, table_id, location_id, slot_id, local_date,
+                  status, partner_approval_status, booking_version, created_at, updated_at;
+    `;
+    const res = await client.query<DbBookingRow>(sql, [
+      params.connectionId,
+      params.bookerId,
+      params.tableId,
+      params.locationId,
+      params.slotId,
+      params.localDate,
+      params.bookingVersion,
+      params.rescheduledFromBookingId
+    ]);
+    return res.rows[0];
+  }
+
+  /**
+   * Copies participants from a source booking to a new booking row.
+   */
+  async copyParticipants(
+    client: PoolClient,
+    sourceBookingId: string,
+    targetBookingId: string
+  ): Promise<void> {
+    const sql = `
+      INSERT INTO campus_duo.booking_participant (booking_id, user_id, participant_role, joined_at)
+      SELECT $2, user_id, participant_role, now()
+      FROM campus_duo.booking_participant
+      WHERE booking_id = $1 AND removed_at IS NULL;
+    `;
+    await client.query(sql, [sourceBookingId, targetBookingId]);
   }
 
   /**
@@ -447,7 +611,9 @@ export class BookingRepository {
    */
   async getBookingDetail(
     bookingId: string,
-    actorUserId: string
+    actorUserId: string,
+    client?: PoolClient,
+    isAdmin: boolean = false
   ): Promise<DbBookingDetailRow | null> {
     const sql = `
       SELECT
@@ -486,7 +652,8 @@ export class BookingRepository {
       JOIN campus_duo.study_slot s ON s.slot_id = b.slot_id
       WHERE b.booking_id = $1
         AND (
-            b.booker_id = $2
+            $3 = true
+            OR b.booker_id = $2
             OR EXISTS (
                 SELECT 1 FROM campus_duo.booking_participant bp
                 WHERE bp.booking_id = b.booking_id
@@ -495,7 +662,9 @@ export class BookingRepository {
             )
         );
     `;
-    const res = await query<DbBookingDetailRow>(sql, [bookingId, actorUserId]);
+    const res = client
+      ? await client.query<DbBookingDetailRow>(sql, [bookingId, actorUserId, isAdmin])
+      : await query<DbBookingDetailRow>(sql, [bookingId, actorUserId, isAdmin]);
     return res.rows[0] || null;
   }
 

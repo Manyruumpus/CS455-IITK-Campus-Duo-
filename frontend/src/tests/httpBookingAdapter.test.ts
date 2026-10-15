@@ -146,21 +146,10 @@ describe('HttpBookingAdapter Unit & Contract Suite', () => {
   });
 
   describe('2. Unimplemented Service Fallback (Preserving Safe Failure)', () => {
-    it('throws SERVICE_UNAVAILABLE for operations without backend endpoints', async () => {
+    it('throws SERVICE_UNAVAILABLE for operations without backend endpoints (reconcileBooking)', async () => {
       const ctx = context(ALEX_SESSION);
 
       await expect(adapter.reconcileBooking('op-123', ctx)).rejects.toMatchObject({
-        code: ErrorCode.SERVICE_UNAVAILABLE,
-      });
-      await expect(
-        adapter.rescheduleBooking(
-          { bookingId: 'bk-123', newLocalDate: '2026-10-21', newSlotId: 'slot-456' },
-          ctx
-        )
-      ).rejects.toMatchObject({
-        code: ErrorCode.SERVICE_UNAVAILABLE,
-      });
-      await expect(adapter.cancelBooking('bk-123', ctx)).rejects.toMatchObject({
         code: ErrorCode.SERVICE_UNAVAILABLE,
       });
 
@@ -701,6 +690,149 @@ describe('HttpBookingAdapter Unit & Contract Suite', () => {
       expect(bookings.length).toBe(1);
       expect(bookings[0].bookingId).toBe(SEED_BOOKING_UUID);
       expect(bookings[0].status).toBe('CONFIRMED');
+    });
+
+    it('successfully cancels booking via cancelBooking endpoint', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: {
+            bookingId: SEED_BOOKING_UUID,
+            bookerId: ALEX_UUID,
+            participants: [
+              { userId: ALEX_UUID, displayName: 'Dev Student Alex', role: 'CREATOR' },
+              { userId: SAM_UUID, displayName: 'Dev Student Sam', role: 'COMPANION' },
+            ],
+            tableId: TABLE_UUID,
+            tableNumber: 'DB05-A',
+            locationId: LOCATION_UUID,
+            locationName: 'P.K. Kelkar Library',
+            localDate: '2026-11-14',
+            slotId: SLOT_UUID,
+            timeWindow: '10:00 - 12:00',
+            status: 'CANCELLED',
+            allowedActions: [],
+            partnerApprovalStatus: 'NOT_REQUIRED',
+            bookingVersion: 2,
+            createdAt: '2026-10-14T10:00:00Z',
+            cancelledAt: '2026-10-15T12:00:00Z',
+          },
+          requestId: 'req-cancel-1',
+        }),
+      });
+
+      const result = await adapter.cancelBooking(SEED_BOOKING_UUID, context(ALEX_SESSION));
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [calledUrl, calledInit] = mockFetch.mock.calls[0];
+      expect(calledUrl).toBe(`http://test-backend:4000/api/booking/${SEED_BOOKING_UUID}/cancel`);
+      expect(calledInit.method).toBe('POST');
+      expect(calledInit.headers['X-Campus-Duo-Test-Actor']).toBe(ALEX_UUID);
+
+      expect(result.status).toBe('CANCELLED');
+      expect(result.bookingId).toBe(SEED_BOOKING_UUID);
+      expect(result.cancelledAt).toBeDefined();
+    });
+
+    it('translates 403 FORBIDDEN when companion attempts to cancel', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 403,
+        json: async () => ({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Under current demo policy, only the booking creator or administrator may cancel or reschedule this reservation.',
+          },
+        }),
+      });
+
+      await expect(
+        adapter.cancelBooking(SEED_BOOKING_UUID, context(SAM_SESSION))
+      ).rejects.toMatchObject({
+        code: ErrorCode.FORBIDDEN,
+        message: expect.stringContaining('only the booking creator or administrator may cancel or reschedule'),
+      });
+    });
+
+    it('successfully reschedules booking via rescheduleBooking endpoint', async () => {
+      const NEW_BOOKING_UUID = '00000000-0000-0000-0000-00000000d583';
+      const NEW_SLOT_UUID = '00000000-0000-0000-0000-00000000d575';
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: {
+            bookingId: NEW_BOOKING_UUID,
+            bookerId: ALEX_UUID,
+            participants: [
+              { userId: ALEX_UUID, displayName: 'Dev Student Alex', role: 'CREATOR' },
+              { userId: SAM_UUID, displayName: 'Dev Student Sam', role: 'COMPANION' },
+            ],
+            tableId: TABLE_UUID,
+            tableNumber: 'DB05-B',
+            locationId: LOCATION_UUID,
+            locationName: 'P.K. Kelkar Library',
+            localDate: '2026-11-15',
+            slotId: NEW_SLOT_UUID,
+            timeWindow: '12:00 - 14:00',
+            status: 'CONFIRMED',
+            allowedActions: ['CANCEL', 'RESCHEDULE'],
+            partnerApprovalStatus: 'NOT_REQUIRED',
+            bookingVersion: 2,
+            createdAt: '2026-10-15T12:00:00Z',
+            rescheduledFromBookingId: SEED_BOOKING_UUID,
+          },
+          requestId: 'req-resched-1',
+        }),
+      });
+
+      const result = await adapter.rescheduleBooking(
+        {
+          bookingId: SEED_BOOKING_UUID,
+          newLocalDate: '2026-11-15',
+          newSlotId: NEW_SLOT_UUID,
+        },
+        context(ALEX_SESSION)
+      );
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      const [calledUrl, calledInit] = mockFetch.mock.calls[0];
+      expect(calledUrl).toBe(`http://test-backend:4000/api/booking/${SEED_BOOKING_UUID}/reschedule`);
+      expect(calledInit.method).toBe('POST');
+      expect(calledInit.headers['X-Campus-Duo-Test-Actor']).toBe(ALEX_UUID);
+
+      expect(result.status).toBe('CONFIRMED');
+      expect(result.bookingId).toBe(NEW_BOOKING_UUID);
+      expect(result.rescheduledFromBookingId).toBe(SEED_BOOKING_UUID);
+    });
+
+    it('translates 409 CONFLICT when target reschedule slot is occupied', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 409,
+        json: async () => ({
+          error: {
+            code: 'CONFLICT',
+            message: 'The selected study slot is no longer available',
+          },
+        }),
+      });
+
+      await expect(
+        adapter.rescheduleBooking(
+          {
+            bookingId: SEED_BOOKING_UUID,
+            newLocalDate: '2026-11-15',
+            newSlotId: SLOT_UUID,
+          },
+          context(ALEX_SESSION)
+        )
+      ).rejects.toMatchObject({
+        code: ErrorCode.CONFLICT,
+        message: expect.stringContaining('no longer available'),
+      });
     });
   });
 });

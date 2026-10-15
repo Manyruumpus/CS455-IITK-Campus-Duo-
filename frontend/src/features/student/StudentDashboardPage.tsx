@@ -10,6 +10,9 @@ import {
   useStudyRecommendations,
   useSocialRecommendations,
   useConnectionCounts,
+  useMyBookings,
+  usePrivateProfile,
+  useBookingLocations,
 } from '@/queries';
 
 export const StudentDashboardPage: React.FC = () => {
@@ -18,6 +21,9 @@ export const StudentDashboardPage: React.FC = () => {
   const { data: studyCounts } = useConnectionCounts('STUDY');
   const { data: socialCounts } = useConnectionCounts('SOCIAL');
   const { data: socialPeers } = useSocialRecommendations();
+  const { data: myBookings } = useMyBookings();
+  const { data: profile } = usePrivateProfile();
+  const { data: locations, isLoading: isLocationsLoading } = useBookingLocations();
 
   const topMatch = recommendations && recommendations.length > 0 ? recommendations[0] : null;
   const socialMutualCount = socialCounts?.mutual ?? 0;
@@ -25,10 +31,20 @@ export const StudentDashboardPage: React.FC = () => {
   const studyMutualCount = studyCounts?.mutual ?? 0;
   const discoveryCount = socialPeers?.length ?? 0;
 
+  // Real upcoming confirmed reservation for the authenticated actor
+  const upcomingBooking = React.useMemo(() => {
+    if (!myBookings) return null;
+    const confirmed = myBookings.filter((b) => b.status === 'CONFIRMED');
+    return confirmed[0] || null;
+  }, [myBookings]);
+
+  // Real active enrolled courses from the student's profile
+  const enrolledCourses = profile?.courses || [];
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`Welcome back, ${session?.name || 'Student'}`}
+        title={`${session?.isFirstLogin ? 'Welcome' : 'Welcome back'}, ${session?.name || 'Student'}`}
         subtitle={
           session?.rollNumber
             ? `IIT Kanpur Student · Roll #${session.rollNumber}`
@@ -53,37 +69,75 @@ export const StudentDashboardPage: React.FC = () => {
 
       {/* Overview Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card variant="craft" className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-craft-muted font-medium">Upcoming Reservation</span>
-            <Badge variant="success" dot>Confirmed</Badge>
-          </div>
-          <p className="text-base font-semibold text-craft-ink">Table T-12 (PK Kelkar 2F)</p>
-          <p className="text-xs text-craft-muted mt-1 flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-ember-400" />
-            Today, 16:00 – 18:00 (2 Seats)
-          </p>
-          <div className="mt-3 pt-2 border-t border-craft-border flex justify-end">
-            <Link to="/app/booking/bk-1001" className="text-xs text-ember-400 hover:underline flex items-center gap-1">
-              View Pass <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-        </Card>
+        {upcomingBooking ? (
+          <Card variant="craft" className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-craft-muted font-medium">Upcoming Reservation</span>
+              <Badge variant="success" dot>Confirmed</Badge>
+            </div>
+            <p className="text-base font-semibold text-craft-ink">
+              Table {upcomingBooking.tableNumber} ({upcomingBooking.locationName || 'PK Kelkar 2F'})
+            </p>
+            <p className="text-xs text-craft-muted mt-1 flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-ember-400" />
+              {upcomingBooking.localDate}, {upcomingBooking.timeWindow || 'Study Slot'}
+            </p>
+            <div className="mt-3 pt-2 border-t border-craft-border flex justify-end">
+              <Link to={`/app/booking/${upcomingBooking.bookingId}`} className="text-xs text-ember-400 hover:underline flex items-center gap-1">
+                View Pass <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </Card>
+        ) : (
+          <Card variant="default" className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-craft-muted font-medium">Upcoming Reservation</span>
+              <Badge variant="mono">None</Badge>
+            </div>
+            <p className="text-sm font-medium text-craft-ink">No upcoming reservations</p>
+            <p className="text-xs text-craft-muted mt-1">
+              You have no active study table bookings scheduled.
+            </p>
+            <div className="mt-3 pt-2 border-t border-craft-border flex justify-end">
+              <Link to="/app/booking/table-grid" className="text-xs text-ember-400 hover:underline flex items-center gap-1">
+                Book a Table <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </Card>
+        )}
 
-        <Card variant="default" className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-craft-muted font-medium">Active Enrolled Courses</span>
-            <Badge variant="mono">3 Courses</Badge>
-          </div>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <Badge variant="mono">CS455</Badge>
-            <Badge variant="mono">MTH101</Badge>
-            <Badge variant="mono">ESC102</Badge>
-          </div>
-          <p className="text-[11px] text-craft-muted mt-3">
-            Matching partners based on course revision pace.
-          </p>
-        </Card>
+        {enrolledCourses.length > 0 ? (
+          <Card variant="default" className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-craft-muted font-medium">Active Enrolled Courses</span>
+              <Badge variant="mono">{enrolledCourses.length} Course{enrolledCourses.length !== 1 ? 's' : ''}</Badge>
+            </div>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {enrolledCourses.map((c) => (
+                <Badge key={c.code} variant="mono">{c.code}</Badge>
+              ))}
+            </div>
+            <p className="text-[11px] text-craft-muted mt-3">
+              Matching partners based on course revision pace.
+            </p>
+          </Card>
+        ) : (
+          <Card variant="default" className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-craft-muted font-medium">Active Enrolled Courses</span>
+              <Badge variant="mono">0 Courses</Badge>
+            </div>
+            <p className="text-sm font-medium text-craft-ink">No courses added yet</p>
+            <p className="text-xs text-craft-muted mt-1">
+              Add your semester courses in Profile to find matching study partners.
+            </p>
+            <div className="mt-3 pt-2 border-t border-craft-border flex justify-end">
+              <Link to="/app/profile" className="text-xs text-ember-400 hover:underline flex items-center gap-1">
+                Edit Profile <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
+          </Card>
+        )}
 
         <Card variant="default" className="p-4">
           <div className="flex items-center justify-between mb-2">
@@ -229,34 +283,68 @@ export const StudentDashboardPage: React.FC = () => {
         </Card>
 
 
-        {/* Quick Booking Hub */}
+        {/* Study Table Locations Hub */}
         <Card variant="default">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-sky-400" />
-              Shared Table Reservations
+              Study Table Locations
             </CardTitle>
             <CardDescription>Canonical 2-person table reservations across campus.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <div className="p-2.5 rounded bg-craft-surface border border-craft-border flex items-center justify-between text-xs">
-              <div>
-                <p className="font-medium text-craft-ink">P.K. Kelkar Library — 2nd Floor</p>
-                <p className="text-[11px] text-craft-muted">Whisper collaboration zone · Power plugs</p>
+            {isLocationsLoading ? (
+              <div className="p-3 text-xs text-craft-muted animate-pulse">
+                Loading campus study locations...
               </div>
-              <Link to="/app/booking/table-grid">
-                <Button variant="ember" size="sm">Book Table</Button>
-              </Link>
-            </div>
-            <div className="p-2.5 rounded bg-craft-surface border border-craft-border flex items-center justify-between text-xs">
-              <div>
-                <p className="font-medium text-craft-ink">Computer Centre CC-101</p>
-                <p className="text-[11px] text-craft-muted">Conversational coding workstations</p>
+            ) : locations && locations.length > 0 ? (
+              locations.map((loc) => {
+                const isCc = loc.id.includes('cc') || loc.name.toLowerCase().includes('computer centre');
+                return (
+                  <div
+                    key={loc.id}
+                    className="p-2.5 rounded bg-craft-surface border border-craft-border flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-medium text-craft-ink">{loc.name}</p>
+                        {(loc.name.includes('[SYNTHETIC') || loc.name.includes('DEV SEED')) && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-950/30 text-amber-300 border-amber-500/40">
+                            Dev Seed
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-craft-muted">
+                        {loc.noisePolicy === 'WHISPER_COLLAB'
+                          ? 'Whisper collaboration zone'
+                          : loc.noisePolicy === 'ABSOLUTE_SILENCE'
+                          ? 'Silent study area'
+                          : 'Conversational workstations'}
+                        {loc.hasPowerOutlets ? ' · Power outlets' : ''}
+                      </p>
+                    </div>
+                    {isCc ? (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[10px] text-amber-400 border-amber-500/30">
+                          No slots available
+                        </Badge>
+                        <Button variant="outline" size="sm" disabled title="No reservable slots in CC-101">
+                          Book Table
+                        </Button>
+                      </div>
+                    ) : (
+                      <Link to={`/app/booking/table-grid?locationId=${loc.id}`}>
+                        <Button variant="ember" size="sm">Book Table</Button>
+                      </Link>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-3 text-xs text-craft-muted">
+                No active study locations configured.
               </div>
-              <Link to="/app/booking/table-grid">
-                <Button variant="outline" size="sm">Book Table</Button>
-              </Link>
-            </div>
+            )}
           </CardContent>
           <CardFooter>
             <span className="text-[11px] text-craft-muted">Strict 2-person table allocation.</span>

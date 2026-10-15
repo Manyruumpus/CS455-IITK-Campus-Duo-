@@ -143,7 +143,7 @@ export async function cleanupTestData(
         [bIds]
       );
       await client.query(
-        `UPDATE campus_duo.booking SET rescheduled_from_booking_id = NULL WHERE booking_id = ANY($1::uuid[])`,
+        `UPDATE campus_duo.booking SET rescheduled_from_booking_id = NULL WHERE rescheduled_from_booking_id = ANY($1::uuid[]) OR booking_id = ANY($1::uuid[])`,
         [bIds]
       );
       await client.query(
@@ -214,10 +214,60 @@ export async function deleteTestUser(emailPattern: string): Promise<void> {
       }
       await client.query(`DELETE FROM campus_duo.idempotency_record WHERE actor_user_id = ANY($1::uuid[])`, [userIds]);
       await client.query(`DELETE FROM campus_duo.audit_event WHERE actor_user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.discovery_action WHERE actor_user_id = ANY($1::uuid[]) OR target_user_id = ANY($1::uuid[])`, [userIds]);
       await client.query(`DELETE FROM campus_duo.connection WHERE user_a_id = ANY($1::uuid[]) OR user_b_id = ANY($1::uuid[])`, [userIds]);
       await client.query(`DELETE FROM campus_duo.consent_record WHERE user_id = ANY($1::uuid[])`, [userIds]);
       await client.query(`DELETE FROM campus_duo.student_profile WHERE user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.otp_challenge WHERE email = $1 OR email LIKE $1`, [emailPattern]);
       await client.query(`DELETE FROM campus_duo.user_account WHERE user_id = ANY($1::uuid[])`, [userIds]);
+    }
+    await client.query('COMMIT;');
+  } catch (err) {
+    await client.query('ROLLBACK;');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export async function cleanupDiscoveryAndConnections(userIdA: string, userIdB: string): Promise<void> {
+  const pool = getMigratorPool();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN;');
+    await client.query(
+      `DELETE FROM campus_duo.discovery_action
+       WHERE (actor_user_id = $1 AND target_user_id = $2)
+          OR (actor_user_id = $2 AND target_user_id = $1)`,
+      [userIdA, userIdB]
+    );
+
+    const conns = await client.query<{ connection_id: string }>(
+      `SELECT connection_id FROM campus_duo.connection
+       WHERE (user_a_id = LEAST($1::uuid, $2::uuid) AND user_b_id = GREATEST($1::uuid, $2::uuid))
+         AND connection_id != '00000000-0000-0000-0000-00000000d561'`,
+      [userIdA, userIdB]
+    );
+
+    if (conns.rows.length > 0) {
+      const connIds = conns.rows.map(r => r.connection_id);
+      const bookings = await client.query<{ booking_id: string }>(
+        `SELECT booking_id FROM campus_duo.booking WHERE connection_id = ANY($1::uuid[])`,
+        [connIds]
+      );
+      if (bookings.rows.length > 0) {
+        const bIds = bookings.rows.map(r => r.booking_id);
+        await client.query(`DELETE FROM campus_duo.booking_participant WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.idempotency_record WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.audit_event WHERE target_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.outbox_event WHERE aggregate_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.booking WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+      }
+
+      await client.query(
+        `DELETE FROM campus_duo.connection WHERE connection_id = ANY($1::uuid[])`,
+        [connIds]
+      );
     }
     await client.query('COMMIT;');
   } catch (err) {

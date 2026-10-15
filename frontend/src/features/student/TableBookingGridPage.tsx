@@ -4,17 +4,21 @@ import { Clock, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { useTableAvailability } from '@/queries';
+import { useTableAvailability, useBookingLocations } from '@/queries';
 import { AppError } from '@/types';
 
 export const TableBookingGridPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const locationId = searchParams.get('locationId') || 'loc-pk-kelkar-2f';
+  const { data: locations } = useBookingLocations();
+  const locationId = searchParams.get('locationId') || locations?.[0]?.id || 'loc-pk-kelkar-2f';
   const selectedDate = searchParams.get('date') || '2026-10-08';
   const { data: slots, isLoading, isError, error, refetch } = useTableAvailability(locationId, selectedDate);
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
   const selectedSlot = slots?.find((s) => s.slotId === selectedSlotId);
+  const activeLocation = locations?.find(
+    (l) => l.id === locationId || (locationId === 'loc-pk-kelkar-2f' && l.id.toLowerCase() === '00000000-0000-0000-0000-00000000d571')
+  );
 
   const availableCount = slots?.filter((s) => s.status === 'AVAILABLE').length ?? 0;
   const reservedCount = slots?.filter((s) => s.status === 'RESERVED').length ?? 0;
@@ -24,7 +28,11 @@ export const TableBookingGridPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Table Availability Matrix"
-        subtitle="Canonical 2-person shared study tables at P.K. Kelkar Library (2nd Floor Quiet Zone)."
+        subtitle={
+          activeLocation
+            ? `Canonical 2-person shared study tables at ${activeLocation.name} (${activeLocation.building}).`
+            : "Canonical 2-person shared study tables at campus study locations."
+        }
         breadcrumbs={[
           { label: 'Dashboard', href: '/app/dashboard' },
           { label: 'Table Booking', href: '/app/booking' },
@@ -39,7 +47,28 @@ export const TableBookingGridPage: React.FC = () => {
         }
       />
 
-      <div className="flex flex-wrap items-end gap-3 p-4 rounded-xl border border-craft-border bg-craft-card">
+      <div className="flex flex-wrap items-end gap-4 p-4 rounded-xl border border-craft-border bg-craft-card">
+        {locations && locations.length > 0 && (
+          <label className="text-xs text-craft-muted">
+            Campus Location
+            <select
+              aria-label="Campus study location"
+              value={activeLocation?.id || locationId}
+              onChange={(event) => {
+                setSelectedSlotId(null);
+                setSearchParams({ locationId: event.target.value, date: selectedDate });
+              }}
+              className="block mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink text-sm"
+            >
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name} ({loc.building})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <label className="text-xs text-craft-muted">
           Campus date (Asia/Kolkata)
           <input
@@ -50,7 +79,7 @@ export const TableBookingGridPage: React.FC = () => {
               setSelectedSlotId(null);
               setSearchParams({ locationId, date: event.target.value });
             }}
-            className="block mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
+            className="block mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink text-sm"
           />
         </label>
         <p className="text-[11px] text-craft-subtle pb-2">Times shown in campus local time (Asia/Kolkata).</p>
@@ -77,7 +106,7 @@ export const TableBookingGridPage: React.FC = () => {
       )}
 
       {/* Grid of 2-Person Tables */}
-      {slots && (
+      {slots && slots.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {slots.map((slot) => {
             const isSelected = selectedSlotId === slot.slotId;
@@ -115,6 +144,18 @@ export const TableBookingGridPage: React.FC = () => {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* Empty State when no slots scheduled */}
+      {slots && slots.length === 0 && !isLoading && !isError && (
+        <div className="p-12 text-center rounded-xl border border-dashed border-craft-border bg-craft-card space-y-3">
+          <Clock className="w-10 h-10 text-craft-muted mx-auto" />
+          <h3 className="text-sm font-semibold text-craft-ink">No Scheduled Slots Found</h3>
+          <p className="text-xs text-craft-muted max-w-md mx-auto">
+            No study table slots are scheduled for {activeLocation?.name ?? 'this location'} on {selectedDate}.
+            Please select a different campus location or date above to view availability.
+          </p>
         </div>
       )}
 

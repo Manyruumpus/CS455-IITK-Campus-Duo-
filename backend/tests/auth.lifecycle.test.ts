@@ -2,12 +2,14 @@ import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 import { closeDbPool } from '../src/config/db';
-import { deleteTestUser, cleanupTestData, closeMigratorPool } from './testDbHelper';
+import { deleteTestUser, cleanupTestData, closeMigratorPool, setupTestSlot } from './testDbHelper';
 
 describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
   const TEST_STUDENT_EMAIL = 'lifecycle.student@iitk.ac.in';
   const TEST_STUDENT_NAME = 'Lifecycle Test Student';
   const TEST_STUDENT_PASS = 'StudentSecret123!';
+  const AUTH_TEST_SLOT_ID = '00000000-0000-0000-0000-00000000e060';
+  const AUTH_TEST_DATE = '2026-11-27';
 
   beforeEach(async () => {
     process.env.NODE_ENV = 'development';
@@ -15,14 +17,24 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
     await deleteTestUser(TEST_STUDENT_EMAIL);
     await deleteTestUser('attacker%');
     await deleteTestUser('dup%');
-    await cleanupTestData(['test-auth-%', 'op-auth-%']);
+    await cleanupTestData(['test-auth-%', 'op-auth-%'], [AUTH_TEST_SLOT_ID]);
+
+    await setupTestSlot({
+      slotId: AUTH_TEST_SLOT_ID,
+      tableId: '00000000-0000-0000-0000-00000000d572',
+      locationId: '00000000-0000-0000-0000-00000000d571',
+      localDate: AUTH_TEST_DATE,
+      startTime: '14:00:00',
+      endTime: '16:00:00',
+      zone: 'COLLABORATIVE_STUDY',
+    });
   });
 
   afterEach(async () => {
     await deleteTestUser(TEST_STUDENT_EMAIL);
     await deleteTestUser('attacker%');
     await deleteTestUser('dup%');
-    await cleanupTestData(['test-auth-%', 'op-auth-%']);
+    await cleanupTestData(['test-auth-%', 'op-auth-%'], [AUTH_TEST_SLOT_ID]);
   });
 
   afterAll(async () => {
@@ -333,11 +345,25 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
         .set('Authorization', `Bearer ${studentToken}`);
       expect(availRes.status).toBe(200);
 
-      // 4. Create booking with companion Sam (auto-paired by registration procedure)
+      // 4. Form mutual STUDY connection between fresh student and companion Sam via discovery API
       const SAM_ID = '00000000-0000-0000-0000-00000000d502';
+
+      const likeRes1 = await request(app)
+        .post('/api/discovery/actions')
+        .set('Authorization', `Bearer ${studentToken}`)
+        .send({ targetStudentId: SAM_ID, mode: 'STUDY', action: 'LIKE' });
+      expect(likeRes1.status).toBe(200);
+
+      const likeRes2 = await request(app)
+        .post('/api/discovery/actions')
+        .set('X-Campus-Duo-Test-Actor', SAM_ID)
+        .send({ targetStudentId: studentId, mode: 'STUDY', action: 'LIKE' });
+      expect(likeRes2.status).toBe(200);
+      expect(likeRes2.body.data.relationshipStatus).toBe('MUTUAL_CONNECTED');
+
+      // 5. Create booking with companion Sam
       const LOCATION_ID = '00000000-0000-0000-0000-00000000d571';
-      const TABLE_ID = '00000000-0000-0000-0000-00000000d573';
-      const SLOT_ID = '00000000-0000-0000-0000-00000000d576';
+      const TABLE_ID = '00000000-0000-0000-0000-00000000d572';
       const CLIENT_OP_ID = 'op-auth-lifecycle-book-01';
 
       const bookRes = await request(app)
@@ -347,8 +373,8 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
           clientOperationId: CLIENT_OP_ID,
           tableId: TABLE_ID,
           locationId: LOCATION_ID,
-          localDate: '2026-11-14',
-          slotId: SLOT_ID,
+          localDate: AUTH_TEST_DATE,
+          slotId: AUTH_TEST_SLOT_ID,
           companionStudentId: SAM_ID,
         });
 
@@ -372,6 +398,34 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
         .get('/api/admin/summary')
         .set('Authorization', `Bearer ${studentToken}`);
       expect(adminRes.status).toBe(403);
+    });
+
+    it('denies direct password registration and login when test harness auth is disabled', async () => {
+      delete process.env.ALLOW_TEST_HARNESS_AUTH;
+
+      const regRes = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: 'blocked.direct@iitk.ac.in',
+          displayName: 'Blocked Direct',
+          password: 'Password123!',
+        });
+      expect(regRes.status).toBe(403);
+      expect(regRes.body.error.code).toBe('FORBIDDEN');
+      expect(regRes.body.error.message).toContain('Direct credential registration is disabled');
+
+      const loginRes = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'blocked.direct@iitk.ac.in',
+          password: 'Password123!',
+        });
+      expect(loginRes.status).toBe(403);
+      expect(loginRes.body.error.code).toBe('FORBIDDEN');
+      expect(loginRes.body.error.message).toContain('Direct password login is disabled');
+
+      // Restore flag for subsequent tests
+      process.env.ALLOW_TEST_HARNESS_AUTH = 'true';
     });
   });
 });

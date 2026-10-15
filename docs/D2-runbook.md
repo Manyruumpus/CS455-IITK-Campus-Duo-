@@ -17,6 +17,7 @@ Deliverable 2 delivers the core vertical slice of **Campus Duo**:
 4. **Live Frontend HTTP Booking Adapter:** React 18 frontend communicating with the Express backend when `VITE_USE_LIVE_BOOKING=true`.
 5. **Bounded Read-Only AI Recommendation Agent:** `POST /api/agent/recommend` implementing the deterministic formula `35C + 25T + 20P + 10L + 10G`, allowlisted read-only tools, zero mutation invariant, grounding assertions, and offline template fallback.
 6. **Local Account Lifecycle & Authoritative RBAC:** Student registration strictly restricted to `@iitk.ac.in` domains (`POST /api/auth/register`), secure `scrypt` credential hashing, session tokens (`Authorization: Bearer <sessionToken>`), and backend RBAC protecting `/api/admin/*` from student access (`403 Forbidden`).
+7. **Transactional Reservation Cancellation & Rescheduling (FR-08 & FR-09):** Atomic cancellation (`POST /api/booking/:bookingId/cancel`) releasing partial index capacity and writing outbox/audit records; atomic reschedule (`POST /api/booking/:bookingId/reschedule`) swapping slots within a single transaction with rollback safety on target conflicts, single direct successor enforcement, and companion read-only protection.
 
 ---
 
@@ -48,10 +49,21 @@ PGDATABASE=campus_duo_dev
 PGUSER=campus_duo_app
 PGPASSWORD=campus_duo_app_secret
 OLLAMA_BASE_URL=http://localhost:11434
+
+# Institutional Email OTP Delivery Settings
+EMAIL_TRANSPORT=auto
+EMAIL_DELIVERY_REQUIRED=false
+EMAIL_FROM="Campus Duo IITK <noreply@campusduo.iitk.ac.in>"
+# Real SMTP relay credentials (e.g. IITK CC relay or external provider)
+# SMTP_HOST=smtp.iitk.ac.in
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=
+# SMTP_PASS=
 ```
 
 > [!IMPORTANT]
-> `ALLOW_TEST_HARNESS_AUTH=true` is strictly isolated to development mode (`NODE_ENV=development`). In production (`NODE_ENV=production`), all test-auth requests are unconditionally rejected with 401 Unauthorized.
+> `ALLOW_TEST_HARNESS_AUTH=true` is strictly isolated to development mode (`NODE_ENV=development`). In production (`NODE_ENV=production`), all test-auth requests and password-only bypass endpoints are unconditionally rejected with 403 Forbidden. Additionally, in `NODE_ENV=production`, `DevelopmentEmailTransport` is strictly forbidden and `EmailService` requires real SMTP configuration.
 
 #### Frontend (`frontend/.env.development`)
 ```ini
@@ -300,7 +312,81 @@ curl -s http://localhost:4000/api/auth/me `
 
 ---
 
-### Step 9: Authoritative Role-Based Access Control (RBAC) Guard
+### Step 9: OTP Authentication Challenge & Verification Lifecycle (FR-01 & FR-02)
+```powershell
+# 1. Request Registration OTP Challenge (strictly checks @iitk.ac.in)
+curl -s -X POST http://localhost:4000/api/auth/otp/request-registration `
+  -H "Content-Type: application/json" `
+  -d '{
+    "email": "otp.student@iitk.ac.in",
+    "displayName": "OTP Verified Student"
+  }'
+# Response (200 OK):
+# { "data": { "challengeId": "<challenge_uuid>", "email": "otp.student@iitk.ac.in", "expiresAt": "...", "maxAttempts": 3, "isDevTransport": true } }
+# Note: In development mode, the dispatched OTP is recorded by DevelopmentEmailTransport in backend memory.
+
+# 2. Submit Verification Code (max 3 attempts, 10-minute expiry)
+curl -s -X POST http://localhost:4000/api/auth/otp/verify-registration `
+  -H "Content-Type: application/json" `
+  -d '{
+    "challengeId": "<challenge_uuid>",
+    "otp": "<6_digit_code>"
+  }'
+# Response (201 Created):
+# Returns authenticated session token, user info, and isFirstLogin: true. No automatic connections are created.
+
+# 3. Subsequent Login OTP Flow
+curl -s -X POST http://localhost:4000/api/auth/otp/request-login `
+  -H "Content-Type: application/json" `
+  -d '{ "email": "otp.student@iitk.ac.in" }'
+
+curl -s -X POST http://localhost:4000/api/auth/otp/verify-login `
+  -H "Content-Type: application/json" `
+  -d '{
+    "challengeId": "<login_challenge_uuid>",
+    "otp": "<6_digit_code>"
+  }'
+# Response (200 OK):
+# Returns authenticated session token and isFirstLogin: false.
+```
+
+---
+
+### Step 10: Academic Study Discovery & Reciprocal Connections (FR-05 & KAN-32)
+```powershell
+# 1. Alex likes Jordan (Directional Like -> LIKE_SENT)
+curl -s -X POST http://localhost:4000/api/discovery/actions `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d501" `
+  -d '{
+    "targetStudentId": "00000000-0000-0000-0000-00000000d503",
+    "mode": "STUDY",
+    "action": "LIKE"
+  }'
+# Returns: { "data": { "actionType": "LIKE", "relationshipStatus": "LIKE_SENT" } }
+# Attempting to book a table together now fails with 403 Forbidden (requires mutual connection).
+
+# 2. Jordan sends reciprocal LIKE to Alex -> MUTUAL_CONNECTED
+curl -s -X POST http://localhost:4000/api/discovery/actions `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d503" `
+  -d '{
+    "targetStudentId": "00000000-0000-0000-0000-00000000d501",
+    "mode": "STUDY",
+    "action": "LIKE"
+  }'
+# Returns: { "data": { "actionType": "LIKE", "relationshipStatus": "MUTUAL_CONNECTED", "connectionId": "..." } }
+# Transactionally commits exactly one row in campus_duo.connection.
+
+# 3. List mutual STUDY connections
+curl -s "http://localhost:4000/api/discovery/connections?mode=STUDY" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d501"
+# Returns active connection with Jordan; now table booking succeeds with 201 Created.
+```
+
+---
+
+### Step 11: Authoritative Role-Based Access Control (RBAC) Guard
 ```powershell
 # 1. Access admin summary as Administrator -> 200 OK
 curl -s -X POST http://localhost:4000/api/auth/login `
@@ -319,16 +405,102 @@ curl -s http://localhost:4000/api/admin/summary `
 
 ---
 
+### Step 12: Reservation Cancellation & Atomic Rescheduling (FR-08 & FR-09)
+```powershell
+# 1. Reschedule reservation to a new date and slot (Creator or Admin)
+curl -s -X POST http://localhost:4000/api/booking/<bookingId>/reschedule `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d501" `
+  -d '{
+    "newLocalDate": "2026-11-15",
+    "newSlotId": "00000000-0000-0000-0000-00000000d575"
+  }'
+# Returns 201 Created with new booking record linked via rescheduledFromBookingId.
+# Source booking is atomically marked CANCELLED with reason 'RESCHEDULED'.
+
+# 2. Companion attempts cancel or reschedule -> 403 Forbidden
+curl -s -X POST http://localhost:4000/api/booking/<bookingId>/reschedule `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d502" `
+  -d '{ "newLocalDate": "2026-11-15", "newSlotId": "..." }'
+# Returns: { "error": { "code": "FORBIDDEN", "message": "Under current demo policy, only the booking creator or administrator may cancel or reschedule this reservation." } }
+
+# 3. Cancel reservation (Creator or Admin)
+curl -s -X POST http://localhost:4000/api/booking/<bookingId>/cancel `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d501" `
+  -d '{ "reason": "User requested cancellation" }'
+# Returns 200 OK with booking status CANCELLED. Slot is immediately restored to AVAILABLE.
+# Calling cancel again is idempotent and returns the same cancelled booking.
+```
+
+---
+
+### Step 13: Admin Booking Management & Resource Inventory (FR-06)
+```powershell
+# 1. Authoritative Admin Booking Overview (requires ROLE_ADMIN)
+curl -s http://localhost:4000/api/admin/bookings `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d599"
+# Returns all system bookings with participant, location, and slot aggregation.
+# Student access returns 403 Forbidden.
+
+# 2. Admin Force Cancellation
+curl -s -X POST http://localhost:4000/api/booking/<bookingId>/cancel `
+  -H "Content-Type: application/json" `
+  -H "X-Campus-Duo-Test-Actor: 00000000-0000-0000-0000-00000000d599" `
+  -d '{ "reason": "Administrative maintenance" }'
+# Releases slot capacity, updates PostgreSQL status to CANCELLED, and invalidates UI queries.
+
+# 3. Admin Resource Inventory Features
+# - Table Auto-Numbering: Creating new tables without explicit tableNumber automatically numbers DB05-C, DB05-D, etc.
+# - Operating Hours & Overlap Validation: Fixed slots must fall entirely within location operating hours (08:00 - 20:00). Overlapping time windows return 409 Conflict.
+# - Table Count Reconciliation: Modifying totalTables automatically provisions new tables (upward) or deactivates unoccupied tables (downward).
+
+# Synthetic Data Note:
+# Seed locations and tables prefixed with "[SYNTHETIC DEV SEED]" are flagged with visible UI badges in the Student Pass and Dashboard to distinguish development simulations from physical facilities.
+```
+
+---
+
 ## 5. Automated Test Suites Summary
 
 | Suite | Location | Command | Test Count | Result |
 |---|---|---|---|---|
-| **Backend Full Suite** | `backend/` | `npm test` | 66 tests (9 files) | **100% PASS** |
+| **Backend Full Suite** | `backend/` | `npm test` | 110 tests (13 files) | **100% PASS** |
 | **Backend TypeScript Compile** | `backend/` | `npm run build` | `tsc` compilation | **0 errors** |
-| **Frontend Full Suite** | `frontend/` | `npm test` | 224 tests (21 files) | **100% PASS** |
+| **Frontend Full Suite** | `frontend/` | `npm test` | 240 tests (25 files) | **100% PASS** |
 | **Frontend Typecheck** | `frontend/` | `npm run typecheck` | `tsc --noEmit` | **0 errors** |
 | **Frontend Bundle Build** | `frontend/` | `npm run build` | `vite build` | **Clean Bundle** |
 | **Live Integration Suite** | `frontend/` | `npm test -- src/tests/httpBookingLive.integration.test.ts` | 7 tests | **100% PASS** |
+
+---
+
+### Institutional Email OTP Verification Walkthrough
+
+1. **Request Registration OTP:**
+   ```powershell
+   curl -s -X POST http://localhost:4000/api/auth/otp/request-registration `
+     -H "Content-Type: application/json" `
+     -d '{ "email": "new.student@iitk.ac.in", "displayName": "New Student" }'
+   # Returns: { "data": { "challengeId": "...", "email": "new.student@iitk.ac.in", "message": "Verification code sent..." } }
+   ```
+2. **Verify OTP and Establish Session:**
+   ```powershell
+   curl -s -X POST http://localhost:4000/api/auth/otp/verify-registration `
+     -H "Content-Type: application/json" `
+     -d '{ "challengeId": "<challengeId>", "otp": "<6-digit-code>" }'
+   # Returns: { "data": { "user": { ... }, "token": "<session_token>", "isFirstLogin": true } }
+   ```
+3. **Request & Verify Login OTP (Returning User):**
+   ```powershell
+   curl -s -X POST http://localhost:4000/api/auth/otp/request-login `
+     -H "Content-Type: application/json" `
+     -d '{ "email": "new.student@iitk.ac.in" }'
+   curl -s -X POST http://localhost:4000/api/auth/otp/verify-login `
+     -H "Content-Type: application/json" `
+     -d '{ "challengeId": "<challengeId>", "otp": "<6-digit-code>" }'
+   # Returns session token with isFirstLogin: false
+   ```
 
 ---
 

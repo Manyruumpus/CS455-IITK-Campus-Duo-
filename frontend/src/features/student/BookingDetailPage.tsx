@@ -6,8 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmationDialog } from '@/components/ui/ConfirmationDialog';
+import { Dialog } from '@/components/ui/Dialog';
 import { useToast } from '@/components/ui/Toast';
-import { useBookingDetail, useCancelBooking, useRescheduleBooking, useTableAvailability } from '@/queries';
+import { useBookingDetail, useCancelBooking, useRescheduleBooking, useTableAvailability, useBookingLocations } from '@/queries';
 import { AppError } from '@/types';
 
 export const BookingDetailPage: React.FC = () => {
@@ -16,14 +17,17 @@ export const BookingDetailPage: React.FC = () => {
   const { addToast } = useToast();
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState('');
   const [newDate, setNewDate] = useState('');
   const [newSlotId, setNewSlotId] = useState('');
 
   const effectiveBookingId = bookingId || 'bk-1001';
   const { data: booking, isLoading, isError, error } = useBookingDetail(effectiveBookingId);
+  const locationsQuery = useBookingLocations();
   const cancelBookingMutation = useCancelBooking();
   const rescheduleBookingMutation = useRescheduleBooking();
-  const proposedAvailability = useTableAvailability(booking?.locationId ?? '', newDate);
+  const activeLocationId = selectedLocationId || (booking?.locationId ?? '');
+  const proposedAvailability = useTableAvailability(activeLocationId, newDate);
 
   const handleCancel = () => {
     cancelBookingMutation.mutate(
@@ -85,7 +89,9 @@ export const BookingDetailPage: React.FC = () => {
   const isCancelled = booking.status === 'CANCELLED';
   const canCancel = booking.allowedActions.includes('CANCEL');
   const canReschedule = booking.allowedActions.includes('RESCHEDULE');
-  const availableAlternatives = (proposedAvailability.data ?? []).filter((slot) => slot.status === 'AVAILABLE');
+  const availableAlternatives = (proposedAvailability.data ?? []).filter(
+    (slot) => slot.status === 'AVAILABLE' && !(slot.slotId === booking.slotId && slot.date === booking.localDate)
+  );
 
   return (
     <div className="space-y-6 max-w-xl mx-auto">
@@ -109,8 +115,13 @@ export const BookingDetailPage: React.FC = () => {
               Approval: {booking.partnerApprovalStatus}
             </Badge>
           </div>
-          <CardTitle className="text-xl">
-            {booking.locationName} — Table {booking.tableNumber}
+          <CardTitle className="text-xl flex flex-col items-center gap-1.5">
+            <span>{booking.locationName} — Table {booking.tableNumber}</span>
+            {(booking.locationName.includes('[SYNTHETIC') || booking.locationName.includes('DEV SEED')) && (
+              <span className="inline-block px-2.5 py-0.5 text-[10px] font-normal bg-amber-950/40 text-amber-300 border border-amber-500/40 rounded-full tracking-wide">
+                Development Seed Facility (Simulation Only — Not an operational IITK room)
+              </span>
+            )}
           </CardTitle>
           <CardDescription>
             Date: {booking.localDate} · 2 Seats (Canonical Pair)
@@ -206,6 +217,7 @@ export const BookingDetailPage: React.FC = () => {
             size="sm"
             disabled={isCancelled || !canReschedule}
             onClick={() => {
+              setSelectedLocationId(booking.locationId);
               setNewDate(booking.localDate);
               setNewSlotId('');
               setIsRescheduleOpen(true);
@@ -217,74 +229,146 @@ export const BookingDetailPage: React.FC = () => {
         </CardFooter>
       </Card>
 
-      {isRescheduleOpen && (
-        <Card variant="craft">
-          <CardHeader>
-            <CardTitle>Reschedule Reservation</CardTitle>
-            <CardDescription>
-              Current: {booking.localDate} · {booking.timeWindow}. The original remains intact if the replacement conflicts.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <label className="block text-xs text-craft-muted">
-              Proposed campus date (Asia/Kolkata)
-              <input
-                type="date"
-                value={newDate}
-                onChange={(event) => {
-                  setNewDate(event.target.value);
-                  setNewSlotId('');
-                }}
-                className="block mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
-              />
-            </label>
-            <label className="block text-xs text-craft-muted">
-              Proposed fixed slot
-              <select
-                value={newSlotId}
-                onChange={(event) => setNewSlotId(event.target.value)}
-                className="block w-full mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
-              >
-                <option value="">Select an available slot</option>
-                {availableAlternatives.map((slot) => (
-                  <option key={slot.slotId} value={slot.slotId}>
-                    {slot.tableNumber} · {slot.startTime} – {slot.endTime}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {proposedAvailability.isError && (
-              <p className="text-xs text-red-300">{proposedAvailability.error.message}</p>
-            )}
-          </CardContent>
-          <CardFooter className="justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsRescheduleOpen(false)}>Keep Current Booking</Button>
+      <Dialog
+        isOpen={isRescheduleOpen}
+        onClose={() => setIsRescheduleOpen(false)}
+        title="Reschedule Table Reservation"
+        description="Choose a new campus date and study slot. The original reservation remains completely intact if the replacement slot conflicts or fails."
+        footer={
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsRescheduleOpen(false)}
+            >
+              Keep Current Booking
+            </Button>
             <Button
               variant="ember"
               size="sm"
-              disabled={!newDate || !newSlotId}
+              disabled={!newDate || !newSlotId || rescheduleBookingMutation.isPending}
               isLoading={rescheduleBookingMutation.isPending}
               onClick={() => {
                 rescheduleBookingMutation.mutate(
-                  { bookingId: effectiveBookingId, newLocalDate: newDate, newSlotId },
                   {
-                    onSuccess: () => setIsRescheduleOpen(false),
+                    bookingId: effectiveBookingId,
+                    newLocalDate: newDate,
+                    newSlotId,
+                  },
+                  {
+                    onSuccess: (data) => {
+                      setIsRescheduleOpen(false);
+                      addToast({
+                        type: 'info',
+                        title: 'Reservation Rescheduled',
+                        description: `Successfully rescheduled to Table ${data.result.tableNumber || ''} (${data.result.timeWindow || newDate}).`,
+                      });
+                      if (data.result.bookingId && data.result.bookingId !== effectiveBookingId) {
+                        navigate(`/app/booking/${data.result.bookingId}`);
+                      }
+                    },
+                    onError: (err) => {
+                      addToast({
+                        type: 'error',
+                        title: 'Rescheduling Failed',
+                        description:
+                          err instanceof AppError
+                            ? err.message
+                            : 'Unable to reschedule; the original booking remains unchanged.',
+                      });
+                    },
                   }
                 );
               }}
             >
               Confirm Reschedule
             </Button>
-          </CardFooter>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-3 rounded-lg bg-craft-surface border border-craft-border text-xs space-y-1">
+            <span className="text-craft-muted font-medium">Current Reservation:</span>
+            <p className="font-semibold text-craft-ink">
+              {booking.locationName} · Table {booking.tableNumber}
+            </p>
+            <p className="text-craft-muted">
+              {booking.localDate} ({booking.timeWindow})
+            </p>
+          </div>
+
+          <label className="block text-xs text-craft-muted">
+            Campus Study Location
+            <select
+              value={activeLocationId}
+              onChange={(e) => {
+                setSelectedLocationId(e.target.value);
+                setNewSlotId('');
+              }}
+              className="block w-full mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
+            >
+              {(locationsQuery.data ?? []).map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name} ({loc.building})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block text-xs text-craft-muted">
+            Proposed Campus Date (Asia/Kolkata)
+            <input
+              type="date"
+              value={newDate}
+              onChange={(event) => {
+                setNewDate(event.target.value);
+                setNewSlotId('');
+              }}
+              className="block w-full mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
+            />
+          </label>
+
+          <label className="block text-xs text-craft-muted">
+            Available Study Table Slot
+            {proposedAvailability.isLoading ? (
+              <div className="flex items-center gap-2 p-3 text-xs text-craft-muted">
+                <Loader2 className="w-4 h-4 animate-spin text-ember-400" />
+                <span>Checking available slots...</span>
+              </div>
+            ) : availableAlternatives.length === 0 ? (
+              <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs text-amber-300 mt-1">
+                No available table slots for this date and location. Please select another date or location.
+              </div>
+            ) : (
+              <select
+                value={newSlotId}
+                onChange={(event) => setNewSlotId(event.target.value)}
+                className="block w-full mt-1 px-3 py-2 rounded-lg bg-craft-surface border border-craft-border text-craft-ink"
+                data-testid="reschedule-slot-select"
+              >
+                <option value="">Select an available slot</option>
+                {availableAlternatives.map((slot) => (
+                  <option key={slot.slotId} value={slot.slotId}>
+                    Table {slot.tableNumber} · {slot.startTime} – {slot.endTime} ({slot.zone.replace(/_/g, ' ')})
+                  </option>
+                ))}
+              </select>
+            )}
+          </label>
+
+          {proposedAvailability.isError && (
+            <p className="text-xs text-red-300">{proposedAvailability.error.message}</p>
+          )}
+
           {rescheduleBookingMutation.isError && (
-            <p className="px-6 pb-4 text-xs text-red-300">
+            <div className="p-3 rounded-lg bg-red-950/40 border border-red-500/40 text-xs text-red-200">
               {rescheduleBookingMutation.error instanceof AppError
                 ? rescheduleBookingMutation.error.message
                 : 'Unable to reschedule; the original booking remains unchanged.'}
-            </p>
+            </div>
           )}
-        </Card>
-      )}
+        </div>
+      </Dialog>
 
       <ConfirmationDialog
         isOpen={isCancelOpen}

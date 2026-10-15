@@ -18,6 +18,7 @@ const DEMO_USER_MAP: Record<string, string> = {
   'usr-student-alex': '00000000-0000-0000-0000-00000000D501',
   'usr-student-sam': '00000000-0000-0000-0000-00000000D502',
   'usr-student-jordan': '00000000-0000-0000-0000-00000000D503',
+  'usr-admin-senate': '00000000-0000-0000-0000-00000000D599',
 };
 
 const DEMO_LOCATION_MAP: Record<string, string> = {
@@ -346,9 +347,9 @@ export class HttpBookingAdapter implements IBookingService {
         (p) => typeof p.userId === 'string' && p.userId.toLowerCase() === actorIdLower && p.role === 'CREATOR'
       );
 
-    const allowedActions = Array.isArray(raw.allowedActions)
-      ? raw.allowedActions
-      : (isCreator && raw.status !== 'CANCELLED' ? ['CANCEL', 'RESCHEDULE'] : []);
+    const allowedActions = raw.status === 'CONFIRMED'
+      ? (Array.isArray(raw.allowedActions) ? raw.allowedActions : (isCreator ? ['CANCEL', 'RESCHEDULE'] : []))
+      : [];
 
     let timeWindow = raw.timeWindow || '';
     if (!timeWindow && (raw.startTime || raw.start_time) && (raw.endTime || raw.end_time)) {
@@ -450,25 +451,108 @@ export class HttpBookingAdapter implements IBookingService {
   }
 
   public async rescheduleBooking(
-    _request: BookingRescheduleRequest,
-    _context: ServiceContext
+    request: BookingRescheduleRequest,
+    context: ServiceContext
   ): Promise<BookingRecord> {
-    throw new AppError(
-      ErrorCode.SERVICE_UNAVAILABLE,
-      'SERVICE_UNAVAILABLE: rescheduleBooking is not yet implemented by the backend API.',
-      { isTransient: false }
+    if (!request.bookingId) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Booking ID is required to reschedule');
+    }
+    if (!request.newLocalDate) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Replacement date is required to reschedule');
+    }
+    if (!request.newSlotId) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Replacement slot ID is required to reschedule');
+    }
+
+    const headers = this.getAuthHeaders(context, {
+      'Content-Type': 'application/json',
+    });
+
+    const resolvedBookingId = resolveBookingId(request.bookingId);
+    const resolvedSlotId = resolveSlotId(request.newSlotId);
+    const resolvedTableId = request.newTableId ? resolveTableId(request.newTableId) : undefined;
+    const resolvedLocationId = request.newLocationId ? resolveLocationId(request.newLocationId) : undefined;
+
+    const payload = {
+      newLocalDate: request.newLocalDate,
+      newSlotId: resolvedSlotId,
+      newTableId: resolvedTableId,
+      newLocationId: resolvedLocationId,
+      clientOperationId:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `op-resched-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    };
+
+    const endpoint = `/api/booking/${encodeURIComponent(resolvedBookingId)}/reschedule`;
+    const response = await this.executeRequest<{
+      data: any;
+      operationId?: string;
+      requestId: string;
+    }>(
+      endpoint,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+      context
     );
+
+    if (!response || !response.data || !response.data.bookingId) {
+      throw new AppError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        'Invalid response payload from booking rescheduling: missing booking record'
+      );
+    }
+
+    return this.mapToBookingRecord(response.data, context);
   }
 
   public async cancelBooking(
-    _bookingId: string,
-    _context: ServiceContext
+    bookingId: string,
+    context: ServiceContext
   ): Promise<BookingRecord> {
-    throw new AppError(
-      ErrorCode.SERVICE_UNAVAILABLE,
-      'SERVICE_UNAVAILABLE: cancelBooking is not yet implemented by the backend API.',
-      { isTransient: false }
+    if (!bookingId) {
+      throw new AppError(ErrorCode.VALIDATION_ERROR, 'Booking ID is required to cancel reservation');
+    }
+
+    const headers = this.getAuthHeaders(context, {
+      'Content-Type': 'application/json',
+    });
+
+    const resolvedBookingId = resolveBookingId(bookingId);
+    const payload = {
+      reason: 'User requested cancellation',
+      clientOperationId:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `op-cancel-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    };
+
+    const endpoint = `/api/booking/${encodeURIComponent(resolvedBookingId)}/cancel`;
+    const response = await this.executeRequest<{
+      data: any;
+      operationId?: string;
+      requestId: string;
+    }>(
+      endpoint,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+      context
     );
+
+    if (!response || !response.data || !response.data.bookingId) {
+      throw new AppError(
+        ErrorCode.SERVICE_UNAVAILABLE,
+        'Invalid response payload from booking cancellation: missing booking record'
+      );
+    }
+
+    return this.mapToBookingRecord(response.data, context);
   }
 
   /**

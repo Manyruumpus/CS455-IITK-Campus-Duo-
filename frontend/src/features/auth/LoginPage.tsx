@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Shield, ArrowRight, KeyRound, AlertTriangle, LogOut, CheckCircle, Mail, Lock, User } from 'lucide-react';
 import { useDemoAuth, DemoAuthRole } from '@/app/context/DemoAuthContext';
@@ -16,14 +16,33 @@ export const LoginPage: React.FC = () => {
   const fromParam = searchParams.get('from');
   const isExpired = searchParams.get('expired') === 'true';
 
-  // Local account lifecycle state
+  const allowTestPassword = searchParams.get('test_auth') === 'password' || import.meta.env.VITE_ENABLE_TEST_PASSWORD_AUTH === 'true';
+
+  // Local account lifecycle state (OTP is mandatory for normal student access per FR-01)
   const [authMode, setAuthMode] = useState<'signin' | 'register'>('signin');
+  const [authMethod, setAuthMethod] = useState<'password' | 'otp'>(allowTestPassword ? 'password' : 'otp');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+  // OTP authentication lifecycle state
+  const [otpStage, setOtpStage] = useState<'request' | 'verify'>('request');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpChallengeId, setOtpChallengeId] = useState<string | null>(null);
+  const [otpNotice, setOtpNotice] = useState<string | null>(null);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   const apiBaseUrl = (
     import.meta.env.VITE_API_URL ??
@@ -86,16 +105,18 @@ export const LoginPage: React.FC = () => {
       }
 
       const { user, token } = body.data;
+      const isFirstLogin = Boolean(body.data.isFirstLogin);
       const userSession: UserSession = {
         userId: user.userId,
         email: user.email,
         name: user.displayName,
         rollNumber: user.email.split('@')[0],
         role: user.role,
-        isOnboarded: true,
-        hasStudyConsent: true,
+        isOnboarded: !isFirstLogin,
+        hasStudyConsent: !isFirstLogin,
         hasSocialConsent: false,
         sessionToken: token,
+        isFirstLogin,
       };
 
       switchRole(userSession);
@@ -105,6 +126,119 @@ export const LoginPage: React.FC = () => {
       setFormError('Network error: Unable to reach the backend service. Ensure backend is running.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setOtpNotice(null);
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail.endsWith('@iitk.ac.in')) {
+      setFormError('Authentication requires a valid @iitk.ac.in institutional email address.');
+      return;
+    }
+
+    if (authMode === 'register' && displayName.trim().length < 2) {
+      setFormError('Display name must be at least 2 characters.');
+      return;
+    }
+
+    setIsOtpLoading(true);
+    try {
+      const endpoint = authMode === 'register'
+        ? `${apiBaseUrl}/api/auth/otp/request-registration`
+        : `${apiBaseUrl}/api/auth/otp/request-login`;
+
+      const payload = authMode === 'register'
+        ? { email: trimmedEmail, displayName: displayName.trim() }
+        : { email: trimmedEmail };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json();
+      if (!res.ok) {
+        setFormError(body?.error?.message || 'Failed to dispatch verification code.');
+        setIsOtpLoading(false);
+        return;
+      }
+
+      setOtpChallengeId(body.data.challengeId);
+      setOtpStage('verify');
+      setResendCooldown(30);
+      setOtpNotice(`Verification code dispatched to ${trimmedEmail}. Valid for 10 minutes (max 3 attempts).`);
+    } catch {
+      setFormError('Network error: Unable to reach the backend service.');
+    } finally {
+      setIsOtpLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+
+    if (!otpChallengeId) {
+      setFormError('No active verification challenge. Please request a new code.');
+      setOtpStage('request');
+      return;
+    }
+
+    const trimmedOtp = otpCode.trim();
+    if (!/^\d{6}$/.test(trimmedOtp)) {
+      setFormError('Verification code must be exactly 6 digits.');
+      return;
+    }
+
+    setIsOtpLoading(true);
+    try {
+      const endpoint = authMode === 'register'
+        ? `${apiBaseUrl}/api/auth/otp/verify-registration`
+        : `${apiBaseUrl}/api/auth/otp/verify-login`;
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          challengeId: otpChallengeId,
+          otp: trimmedOtp,
+        }),
+      });
+
+      const body = await res.json();
+      if (!res.ok) {
+        setFormError(body?.error?.message || 'Verification failed. Please check the code.');
+        setIsOtpLoading(false);
+        return;
+      }
+
+      const { user, token, isFirstLogin } = body.data;
+      const userSession: UserSession = {
+        userId: user.userId,
+        email: user.email,
+        name: user.displayName,
+        rollNumber: user.email.split('@')[0],
+        role: user.role,
+        isOnboarded: !isFirstLogin,
+        hasStudyConsent: !isFirstLogin,
+        hasSocialConsent: false,
+        sessionToken: token,
+        isFirstLogin: Boolean(isFirstLogin),
+      };
+
+      switchRole(userSession);
+      const target = validateReturnPath(fromParam, user.role);
+      navigate(target, { replace: true });
+    } catch {
+      setFormError('Network error: Unable to reach the backend service.');
+    } finally {
+      setIsOtpLoading(false);
     }
   };
 
@@ -244,61 +378,192 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
 
-          <form onSubmit={handleLocalSubmit} className="space-y-3 pt-1">
-            {formError && (
-              <div className="p-2.5 rounded bg-red-950/40 border border-red-500/50 text-xs text-red-300 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <span>{formError}</span>
+          {allowTestPassword && (
+            <div className="flex items-center justify-between text-[11px] text-craft-muted pt-1">
+              <span>Authentication method (Test Harness):</span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${authMethod === 'password' ? 'bg-ember-500/20 text-ember-400 border border-ember-500/40' : 'bg-craft-surface border border-craft-border text-craft-muted hover:text-craft-ink'}`}
+                  onClick={() => { setAuthMethod('password'); setFormError(null); setOtpNotice(null); }}
+                >
+                  Password
+                </button>
+                <button
+                  type="button"
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${authMethod === 'otp' ? 'bg-ember-500/20 text-ember-400 border border-ember-500/40' : 'bg-craft-surface border border-craft-border text-craft-muted hover:text-craft-ink'}`}
+                  onClick={() => { setAuthMethod('otp'); setFormError(null); setOtpNotice(null); }}
+                >
+                  One-Time Code (OTP)
+                </button>
               </div>
-            )}
+            </div>
+          )}
 
-            {authMode === 'register' && (
+          {authMethod === 'password' ? (
+            <form onSubmit={handleLocalSubmit} className="space-y-3 pt-1">
+              {formError && (
+                <div className="p-2.5 rounded bg-red-950/40 border border-red-500/50 text-xs text-red-300 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {authMode === 'register' && (
+                <Input
+                  label="Full Name"
+                  placeholder="e.g. Alex Rivera"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  leftAdornment={<User className="w-4 h-4" />}
+                  required
+                />
+              )}
+
               <Input
-                label="Full Name"
-                placeholder="e.g. Alex Rivera"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                leftAdornment={<User className="w-4 h-4" />}
+                label="IITK Email Address"
+                placeholder="username@iitk.ac.in"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftAdornment={<Mail className="w-4 h-4" />}
+                helperText="Must be a valid @iitk.ac.in address"
                 required
               />
-            )}
 
-            <Input
-              label="IITK Email Address"
-              placeholder="username@iitk.ac.in"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              leftAdornment={<Mail className="w-4 h-4" />}
-              helperText="Must be a valid @iitk.ac.in address"
-              required
-            />
+              <Input
+                label="Password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                leftAdornment={<Lock className="w-4 h-4" />}
+                helperText="At least 8 characters"
+                required
+              />
 
-            <Input
-              label="Password"
-              placeholder="••••••••"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              leftAdornment={<Lock className="w-4 h-4" />}
-              helperText="At least 8 characters"
-              required
-            />
+              <Button
+                type="submit"
+                variant="ember"
+                size="sm"
+                className="w-full"
+                disabled={isSubmitting}
+              >
+                {isSubmitting
+                  ? 'Processing...'
+                  : authMode === 'register'
+                  ? 'Register Student Account'
+                  : 'Sign In to Account'}
+              </Button>
+            </form>
+          ) : otpStage === 'request' ? (
+            <form onSubmit={handleRequestOtp} className="space-y-3 pt-1">
+              {formError && (
+                <div className="p-2.5 rounded bg-red-950/40 border border-red-500/50 text-xs text-red-300 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
 
-            <Button
-              type="submit"
-              variant="ember"
-              size="sm"
-              className="w-full"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? 'Processing...'
-                : authMode === 'register'
-                ? 'Register Student Account'
-                : 'Sign In to Account'}
-            </Button>
-          </form>
+              {authMode === 'register' && (
+                <Input
+                  label="Full Name"
+                  placeholder="e.g. Alex Rivera"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  leftAdornment={<User className="w-4 h-4" />}
+                  required
+                />
+              )}
+
+              <Input
+                label="IITK Email Address"
+                placeholder="username@iitk.ac.in"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftAdornment={<Mail className="w-4 h-4" />}
+                helperText="Must be a valid @iitk.ac.in address"
+                required
+              />
+
+              <Button
+                type="submit"
+                variant="ember"
+                size="sm"
+                className="w-full"
+                disabled={isOtpLoading}
+              >
+                {isOtpLoading
+                  ? 'Dispatching OTP...'
+                  : authMode === 'register'
+                  ? 'Request Registration OTP'
+                  : 'Request Login OTP'}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOtp} className="space-y-3 pt-1">
+              {formError && (
+                <div className="p-2.5 rounded bg-red-950/40 border border-red-500/50 text-xs text-red-300 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              {otpNotice && (
+                <div className="p-2.5 rounded bg-emerald-950/40 border border-emerald-500/50 text-xs text-emerald-300 flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{otpNotice}</span>
+                </div>
+              )}
+
+              <Input
+                label="6-Digit Verification Code"
+                placeholder="123456"
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                leftAdornment={<Lock className="w-4 h-4" />}
+                helperText="Enter the 6-digit verification code received by email. If multiple codes were received, enter the latest."
+                maxLength={6}
+                required
+              />
+
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  variant="ember"
+                  size="sm"
+                  className="flex-1"
+                  disabled={isOtpLoading}
+                >
+                  {isOtpLoading
+                    ? 'Verifying...'
+                    : authMode === 'register'
+                    ? 'Verify & Register'
+                    : 'Verify & Sign In'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRequestOtp}
+                  disabled={isOtpLoading || resendCooldown > 0}
+                >
+                  {resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend Code'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setOtpStage('request'); setOtpNotice(null); setFormError(null); }}
+                  disabled={isOtpLoading}
+                >
+                  Back
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Demo Fast Logins Section (When Demo Authentication is enabled) */}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Users, Shield, ArrowRight, Settings } from 'lucide-react';
 import { useDemoAuth } from '@/app/context/DemoAuthContext';
 import { Button } from '@/components/ui/Button';
+import { useSocialConsent, useUpdateSocialConsent } from '@/queries/consentHooks';
 
 export interface RequireSocialConsentProps {
   children: ReactNode;
@@ -11,15 +12,28 @@ export interface RequireSocialConsentProps {
 /**
  * RequireSocialConsent Guard
  *
- * Provisional client guard implementing independent consent architecture:
+ * Implements independent consent architecture:
  * Study and Social discovery modes require separate, revokable consent.
  * Never silently opts a student into social discovery.
+ * Synchronized with canonical consent queries and session state.
  * Access to Settings (/app/settings) is never blocked by this guard.
  */
 export const RequireSocialConsent: React.FC<RequireSocialConsentProps> = ({ children }) => {
-  const { socialConsent, grantSocialConsent } = useDemoAuth();
+  const { session, socialConsent: demoSocialConsent, grantSocialConsent } = useDemoAuth();
+  const { data: canonicalConsent } = useSocialConsent();
+  const updateSocialConsent = useUpdateSocialConsent();
 
-  if (!socialConsent) {
+  // Canonical social consent state: prefers query record, falls back to session flag or demo flag
+  const isConsented = canonicalConsent !== undefined
+    ? canonicalConsent.hasConsent
+    : (session?.hasSocialConsent ?? demoSocialConsent);
+
+  const handleActivate = () => {
+    grantSocialConsent();
+    updateSocialConsent.mutate(true);
+  };
+
+  if (!isConsented) {
     return (
       <div className="max-w-xl mx-auto my-12 p-8 rounded-xl border border-ember-500/30 bg-craft-card craft-radial-glow text-center space-y-5">
         <div className="w-12 h-12 rounded-full bg-ember-900/40 border border-ember-500/40 flex items-center justify-center text-ember-400 mx-auto">
@@ -50,7 +64,12 @@ export const RequireSocialConsent: React.FC<RequireSocialConsentProps> = ({ chil
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Button variant="ember" onClick={grantSocialConsent} rightIcon={<ArrowRight className="w-4 h-4" />}>
+          <Button
+            variant="ember"
+            onClick={handleActivate}
+            isLoading={updateSocialConsent.isPending}
+            rightIcon={<ArrowRight className="w-4 h-4" />}
+          >
             Activate Social Mode (Demo Action)
           </Button>
           <Link to="/app/settings">

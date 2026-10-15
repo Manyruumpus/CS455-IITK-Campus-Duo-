@@ -19,8 +19,11 @@ import { AppError } from '@/types';
 import { appConfig } from '@/config/features';
 import { useMyReports } from '@/queries/moderationHooks';
 
+import { useDemoAuth } from '@/app/context/DemoAuthContext';
+
 export const SettingsPage: React.FC = () => {
   const { addToast } = useToast();
+  const { grantSocialConsent, revokeSocialConsent } = useDemoAuth();
   const { data: studyConsent, isLoading: studyLoading } = useStudyConsent();
   const { data: socialConsent, isLoading: socialLoading } = useSocialConsent();
   const { data: profile } = usePrivateProfile();
@@ -80,6 +83,11 @@ export const SettingsPage: React.FC = () => {
 
     updateSocialConsentMutation.mutate(nextState, {
       onSuccess: (res) => {
+        if (res.hasConsent) {
+          grantSocialConsent();
+        } else {
+          revokeSocialConsent();
+        }
         addToast({
           type: res.hasConsent ? 'success' : 'info',
           title: res.hasConsent ? 'Social Discovery Activated' : 'Social Discovery Paused',

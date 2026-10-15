@@ -10,6 +10,7 @@ export default {
       colors: {
         craft: {
           bg: '#121316',
+          base: '#121316',
           surface: '#181a1f',
           surfaceHover: '#20232a',
           card: '#15171b',

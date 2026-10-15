@@ -122,11 +122,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
       }
 
       const user = result.rows[0];
-      if (user.role !== 'ROLE_STUDENT' || user.account_status !== 'ACTIVE' || user.verification_status !== 'VERIFIED') {
+      if (!['ROLE_STUDENT', 'ROLE_ADMIN'].includes(user.role) || user.account_status !== 'ACTIVE' || user.verification_status !== 'VERIFIED') {
         next(new DomainError(
           'UNAUTHENTICATED',
           401,
-          'Test actor is not an active verified student'
+          'Test actor is not an active verified student or administrator'
         ));
         return;
       }
