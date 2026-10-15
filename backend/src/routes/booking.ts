@@ -1,10 +1,33 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { BookingService } from '../services/bookingService';
 import { testAuthMiddleware } from '../middleware/auth';
-import { ApiResponse, BookingRecord, StudyTableSlot } from '../types';
+import { ApiResponse, BookingRecord, CampusLocation, StudyTableSlot } from '../types';
 
 const router = Router();
 const bookingService = new BookingService();
+
+/**
+ * GET /api/booking/locations
+ * Returns active campus study locations along with active table counts.
+ */
+router.get(
+  '/locations',
+  testAuthMiddleware,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const locations = await bookingService.getLocations();
+
+      const response: ApiResponse<CampusLocation[]> = {
+        data: locations,
+        requestId: req.requestId || 'req-unknown'
+      };
+
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 /**
  * GET /api/booking/availability
@@ -70,4 +93,62 @@ router.post(
   }
 );
 
+/**
+ * GET /api/booking
+ * DB-06 booking history query contract.
+ * Retrieves participant-authorized booking history for the current viewer.
+ */
+router.get(
+  '/',
+  testAuthMiddleware,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const actor = req.actor!;
+      const limitParam = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 50;
+
+      const bookings = await bookingService.getMyBookings(
+        actor,
+        isNaN(limitParam) ? 50 : limitParam
+      );
+
+      const response: ApiResponse<BookingRecord[]> = {
+        data: bookings,
+        requestId: req.requestId || 'req-unknown'
+      };
+
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * GET /api/booking/:bookingId
+ * DB-06 booking detail query contract.
+ * Retrieves authenticated booking details for an authorized participant.
+ */
+router.get(
+  '/:bookingId',
+  testAuthMiddleware,
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const actor = req.actor!;
+      const { bookingId } = req.params;
+
+      const booking = await bookingService.getBooking(actor, bookingId);
+
+      const response: ApiResponse<BookingRecord> = {
+        data: booking,
+        requestId: req.requestId || 'req-unknown'
+      };
+
+      res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 export default router;
+

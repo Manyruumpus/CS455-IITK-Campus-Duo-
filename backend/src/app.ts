@@ -3,6 +3,7 @@ import cors from 'cors';
 import crypto from 'crypto';
 import healthRouter from './routes/health';
 import bookingRouter from './routes/booking';
+import agentRouter from './routes/agent';
 import { errorHandler } from './middleware/errorHandler';
 import { DomainError } from './types';
 
@@ -25,6 +26,7 @@ export function createApp(): express.Application {
   // Mount API routers
   app.use('/api', healthRouter);
   app.use('/api/booking', bookingRouter);
+  app.use('/api/agent', agentRouter);
 
   // 404 handler for unrecognized routes
   app.use((req: Request, res: Response, next: NextFunction) => {

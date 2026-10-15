@@ -17,6 +17,48 @@ export interface DbStudySlotRow {
   reserved_count: number;
 }
 
+export interface DbStudyLocationRow {
+  location_id: string;
+  name: string;
+  building: string;
+  open_time: string;
+  close_time: string;
+  has_power_outlets: boolean;
+  has_wifi6: boolean;
+  noise_policy: string;
+  active: boolean;
+  total_tables: number;
+}
+
+export interface DbBookingParticipantJson {
+  userId: string;
+  displayName: string;
+  role: 'CREATOR' | 'COMPANION';
+  joinedAt: string;
+  removedAt: string | null;
+}
+
+export interface DbBookingDetailRow {
+  booking_id: string;
+  booker_id: string;
+  connection_id: string;
+  table_id: string;
+  location_id: string;
+  location_name: string;
+  table_number: string;
+  slot_id: string;
+  local_date: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  partner_approval_status: string;
+  booking_version: number;
+  created_at: string;
+  cancelled_at: string | null;
+  rescheduled_from_booking_id: string | null;
+  participants: DbBookingParticipantJson[];
+}
+
 export interface DbIdempotencyRow {
   idempotency_id: string;
   actor_user_id: string;
@@ -75,6 +117,32 @@ export interface DbBookingRow {
 }
 
 export class BookingRepository {
+  /**
+   * Retrieves all active campus study locations along with the count of their active tables.
+   */
+  async getLocations(): Promise<DbStudyLocationRow[]> {
+    const sql = `
+      SELECT
+          l.location_id,
+          l.name,
+          l.building,
+          l.open_time::text,
+          l.close_time::text,
+          l.has_power_outlets,
+          l.has_wifi6,
+          l.noise_policy,
+          l.active,
+          coalesce(count(t.table_id) FILTER (WHERE t.active), 0)::integer AS total_tables
+      FROM campus_duo.study_location l
+      LEFT JOIN campus_duo.study_table t ON t.location_id = l.location_id
+      WHERE l.active
+      GROUP BY l.location_id, l.name, l.building, l.open_time, l.close_time, l.has_power_outlets, l.has_wifi6, l.noise_policy, l.active
+      ORDER BY l.name, l.location_id;
+    `;
+    const res = await query<DbStudyLocationRow>(sql);
+    return res.rows;
+  }
+
   /**
    * DB-06 Availability Query Contract (queries/06_resource_availability.sql).
    * Parameters: $1 startDate, $2 endDate, $3 locationId (nullable uuid), $4 limit (1..100).
@@ -359,5 +427,134 @@ export class BookingRepository {
       params.bookingId,
       JSON.stringify(params.responseReference)
     ]);
+  }
+
+  /**
+   * Checks whether a booking exists in campus_duo.booking.
+   */
+  async checkBookingExists(bookingId: string): Promise<boolean> {
+    const sql = `
+      SELECT 1 FROM campus_duo.booking
+      WHERE booking_id = $1;
+    `;
+    const res = await query(sql, [bookingId]);
+    return res.rows.length > 0;
+  }
+
+  /**
+   * DB-06 Query Contract (07_booking_history.sql)
+   * Retrieves detail for a specific booking IF the viewer is the booker or active participant.
+   */
+  async getBookingDetail(
+    bookingId: string,
+    actorUserId: string
+  ): Promise<DbBookingDetailRow | null> {
+    const sql = `
+      SELECT
+          b.booking_id,
+          b.booker_id,
+          b.connection_id,
+          b.table_id,
+          b.location_id,
+          l.name AS location_name,
+          t.table_number,
+          b.slot_id,
+          b.local_date::text,
+          s.start_time::text,
+          s.end_time::text,
+          b.status,
+          b.partner_approval_status,
+          b.booking_version,
+          b.created_at,
+          b.cancelled_at,
+          b.rescheduled_from_booking_id,
+          COALESCE((
+              SELECT jsonb_agg(jsonb_build_object(
+                  'userId', p.user_id,
+                  'displayName', u.display_name,
+                  'role', p.participant_role,
+                  'joinedAt', p.joined_at,
+                  'removedAt', p.removed_at
+              ) ORDER BY p.participant_role, p.user_id)
+              FROM campus_duo.booking_participant p
+              JOIN campus_duo.user_account u ON u.user_id = p.user_id
+              WHERE p.booking_id = b.booking_id
+          ), '[]'::jsonb) AS participants
+      FROM campus_duo.booking b
+      JOIN campus_duo.study_location l ON l.location_id = b.location_id
+      JOIN campus_duo.study_table t ON t.table_id = b.table_id
+      JOIN campus_duo.study_slot s ON s.slot_id = b.slot_id
+      WHERE b.booking_id = $1
+        AND (
+            b.booker_id = $2
+            OR EXISTS (
+                SELECT 1 FROM campus_duo.booking_participant bp
+                WHERE bp.booking_id = b.booking_id
+                  AND bp.user_id = $2
+                  AND bp.removed_at IS NULL
+            )
+        );
+    `;
+    const res = await query<DbBookingDetailRow>(sql, [bookingId, actorUserId]);
+    return res.rows[0] || null;
+  }
+
+  /**
+   * DB-06 Query Contract (07_booking_history.sql)
+   * Retrieves participant-authorized booking history for the current viewer.
+   */
+  async getMyBookings(
+    actorUserId: string,
+    limit: number = 50
+  ): Promise<DbBookingDetailRow[]> {
+    const sql = `
+      SELECT
+          b.booking_id,
+          b.booker_id,
+          b.connection_id,
+          b.table_id,
+          b.location_id,
+          l.name AS location_name,
+          t.table_number,
+          b.slot_id,
+          b.local_date::text,
+          s.start_time::text,
+          s.end_time::text,
+          b.status,
+          b.partner_approval_status,
+          b.booking_version,
+          b.created_at,
+          b.cancelled_at,
+          b.rescheduled_from_booking_id,
+          COALESCE((
+              SELECT jsonb_agg(jsonb_build_object(
+                  'userId', p.user_id,
+                  'displayName', u.display_name,
+                  'role', p.participant_role,
+                  'joinedAt', p.joined_at,
+                  'removedAt', p.removed_at
+              ) ORDER BY p.participant_role, p.user_id)
+              FROM campus_duo.booking_participant p
+              JOIN campus_duo.user_account u ON u.user_id = p.user_id
+              WHERE p.booking_id = b.booking_id
+          ), '[]'::jsonb) AS participants
+      FROM campus_duo.booking b
+      JOIN campus_duo.study_location l ON l.location_id = b.location_id
+      JOIN campus_duo.study_table t ON t.table_id = b.table_id
+      JOIN campus_duo.study_slot s ON s.slot_id = b.slot_id
+      WHERE (
+          b.booker_id = $1
+          OR EXISTS (
+              SELECT 1 FROM campus_duo.booking_participant bp
+              WHERE bp.booking_id = b.booking_id
+                AND bp.user_id = $1
+                AND bp.removed_at IS NULL
+          )
+      )
+      ORDER BY b.created_at DESC, b.booking_id DESC
+      LIMIT $2;
+    `;
+    const res = await query<DbBookingDetailRow>(sql, [actorUserId, limit]);
+    return res.rows;
   }
 }

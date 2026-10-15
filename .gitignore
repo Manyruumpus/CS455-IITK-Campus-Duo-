@@ -5,6 +5,8 @@ node_modules/
 /frontend/dist/
 /frontend/dist-ssr/
 /frontend/coverage/
+/backend/dist/
+/backend/coverage/
 *.tsbuildinfo
 
 # Environment files
@@ -17,10 +19,15 @@ node_modules/
 # Logs
 logs/
 *.log
+ai_log.txt
 
 # Local editor settings
 /frontend/.vscode/
 .idea/
+*.swp
+*.swo
+*~
+*.un~
 
 # Operating system files
 .DS_Store

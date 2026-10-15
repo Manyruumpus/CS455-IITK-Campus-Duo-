@@ -1,10 +1,11 @@
 import crypto from 'crypto';
 import { getClient } from '../config/db';
-import { BookingRepository } from '../repository/bookingRepo';
+import { BookingRepository, DbBookingDetailRow } from '../repository/bookingRepo';
 import {
   ActorContext,
   BookingCreationRequest,
   BookingRecord,
+  CampusLocation,
   DomainError,
   StudyTableSlot,
   SlotStatus
@@ -32,6 +33,109 @@ export function computePayloadFingerprint(payload: {
 
 export class BookingService {
   constructor(private readonly repo: BookingRepository = new BookingRepository()) {}
+
+  async getLocations(): Promise<CampusLocation[]> {
+    const rows = await this.repo.getLocations();
+
+    return rows.map((r): CampusLocation => {
+      const formatTime = (t: string): string => {
+        if (!t) return '';
+        const parts = t.split(':');
+        if (parts.length >= 2) {
+          return `${parts[0]}:${parts[1]}`;
+        }
+        return t;
+      };
+
+      return {
+        id: r.location_id,
+        name: r.name,
+        building: r.building,
+        totalTables: Number(r.total_tables) || 0,
+        openTime: formatTime(r.open_time),
+        closeTime: formatTime(r.close_time),
+        hasPowerOutlets: Boolean(r.has_power_outlets),
+        hasWifi6: Boolean(r.has_wifi6),
+        noisePolicy: r.noise_policy as any,
+        active: Boolean(r.active)
+      };
+    });
+  }
+
+  private mapDbRowToBookingRecord(row: DbBookingDetailRow, actorUserId: string): BookingRecord {
+    const formatTime = (t: string): string => {
+      if (!t) return '';
+      const parts = t.split(':');
+      return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t;
+    };
+
+    const startTimeFormatted = formatTime(row.start_time);
+    const endTimeFormatted = formatTime(row.end_time);
+    const timeWindow = `${startTimeFormatted} - ${endTimeFormatted}`;
+
+    const participants = (row.participants || []).map((p) => ({
+      userId: p.userId,
+      displayName: p.displayName || (p.role === 'CREATOR' ? 'Booking Creator' : 'Study Companion'),
+      role: p.role
+    }));
+
+    const companion = participants.find((p) => p.role === 'COMPANION');
+    const isCreator = row.booker_id.toLowerCase() === actorUserId.toLowerCase();
+
+    return {
+      bookingId: row.booking_id,
+      bookerId: row.booker_id,
+      participants,
+      companionStudentId: companion?.userId,
+      companionDisplayName: companion?.displayName,
+      tableId: row.table_id,
+      tableNumber: row.table_number,
+      locationId: row.location_id,
+      locationName: row.location_name,
+      localDate: row.local_date,
+      slotId: row.slot_id,
+      timeWindow,
+      status: row.status as any,
+      allowedActions: isCreator ? ['CANCEL', 'RESCHEDULE'] : [],
+      partnerApprovalStatus: (row.partner_approval_status as any) || 'NOT_REQUIRED',
+      bookingVersion: row.booking_version,
+      createdAt: typeof row.created_at === 'string' ? row.created_at : new Date(row.created_at).toISOString(),
+      cancelledAt: row.cancelled_at
+        ? (typeof row.cancelled_at === 'string' ? row.cancelled_at : new Date(row.cancelled_at).toISOString())
+        : undefined,
+      rescheduledFromBookingId: row.rescheduled_from_booking_id || undefined
+    };
+  }
+
+  /**
+   * Retrieves single authenticated booking record if the actor is authorized.
+   */
+  async getBooking(actor: ActorContext, bookingId: string): Promise<BookingRecord> {
+    if (!bookingId || !UUID_REGEX.test(bookingId)) {
+      throw new DomainError('VALIDATION_ERROR', 400, 'Invalid UUID format for bookingId');
+    }
+
+    const exists = await this.repo.checkBookingExists(bookingId);
+    if (!exists) {
+      throw new DomainError('NOT_FOUND', 404, `Booking with ID ${bookingId} not found`);
+    }
+
+    const row = await this.repo.getBookingDetail(bookingId, actor.userId);
+    if (!row) {
+      throw new DomainError('FORBIDDEN', 403, 'You are not authorized to view this booking');
+    }
+
+    return this.mapDbRowToBookingRecord(row, actor.userId);
+  }
+
+  /**
+   * Retrieves participant-authorized booking history for the current viewer.
+   */
+  async getMyBookings(actor: ActorContext, limit: number = 50): Promise<BookingRecord[]> {
+    const clampedLimit = Math.max(1, Math.min(50, Math.floor(limit)));
+    const rows = await this.repo.getMyBookings(actor.userId, clampedLimit);
+    return rows.map((r) => this.mapDbRowToBookingRecord(r, actor.userId));
+  }
 
   async getAvailability(
     startDate: string,
@@ -278,6 +382,13 @@ export class BookingService {
         correlationId: requestId
       });
 
+      const formatTime = (t: string): string => {
+        if (!t) return '';
+        const parts = t.split(':');
+        return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : t;
+      };
+      const timeWindow = `${formatTime(slotResource.start_time)} - ${formatTime(slotResource.end_time)}`;
+
       // Assemble final response record
       const bookingRecord: BookingRecord = {
         bookingId: bookingRow.booking_id,
@@ -287,13 +398,17 @@ export class BookingService {
           { userId: actor.userId, displayName: actor.displayName, role: 'CREATOR' },
           { userId: companion.user_id, displayName: companion.display_name, role: 'COMPANION' }
         ],
+        companionStudentId: companion.user_id,
+        companionDisplayName: companion.display_name,
         tableId: bookingRow.table_id,
         tableNumber: slotResource.table_number,
         locationId: bookingRow.location_id,
         locationName: slotResource.location_name,
         localDate: bookingRow.local_date,
         slotId: bookingRow.slot_id,
+        timeWindow,
         status: 'CONFIRMED',
+        allowedActions: ['CANCEL', 'RESCHEDULE'],
         partnerApprovalStatus: 'NOT_REQUIRED',
         bookingVersion: bookingRow.booking_version,
         createdAt: bookingRow.created_at

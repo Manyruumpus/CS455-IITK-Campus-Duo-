@@ -7,6 +7,7 @@ import {
   queryKeys,
   useTableAvailability,
   useCreateBooking,
+  useBookingLocations,
 } from '@/queries';
 import { DemoAuthProvider, useDemoAuth } from '@/app/context/DemoAuthContext';
 import { mockStore } from '@/mocks/store';
@@ -205,4 +206,27 @@ describe('TanStack Query Architecture & Session Isolation', () => {
       expect(adminCache.length).toBe(0);
     });
   });
+
+  describe('5. useBookingLocations Hook Contract', () => {
+    it('successfully fetches campus locations through useBookingLocations', async () => {
+      const queryClient = createApplicationQueryClient();
+      const wrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>
+          <DemoAuthProvider initialSession={STUDENT_A_SESSION}>{children}</DemoAuthProvider>
+        </QueryClientProvider>
+      );
+
+      const { result } = renderHook(() => useBookingLocations(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isSuccess).toBe(true);
+      });
+
+      expect(Array.isArray(result.current.data)).toBe(true);
+      expect(result.current.data!.length).toBeGreaterThan(0);
+      expect(result.current.data![0].name).toBeTruthy();
+      expect(result.current.data![0].totalTables).toBeGreaterThanOrEqual(1);
+    });
+  });
 });
+

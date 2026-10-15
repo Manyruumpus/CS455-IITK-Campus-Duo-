@@ -134,9 +134,17 @@ Every significant pull request should reference its Jira issue, describe the imp
 
 ## Project Status
 
-**Current phase:** Deliverable 0 — Proposal submission and approval pending.
+**Current phase:** Deliverable 2 — Working Code, Transactional Demo, Bounded Agent Workflow, and Traceability (15 October 2026).
 
-Implementation of Deliverable 1 begins only after proposal approval. The initial backlog, system architecture, requirements traceability matrix, and sprint plan will be maintained in Jira and committed to the repository after approval.
+Deliverable 2 delivers the core vertical slice of Campus Duo:
+- **Backend Service (`backend/`):** PostgreSQL-backed Express booking service (`campus_duo_app` role), availability queries, transactional booking creation with partial unique index protection, participant-authorized booking detail/history retrieval, and 10-client concurrency race verification (49 tests passing).
+- **Frontend Live Adapter (`frontend/src/services/http/HttpBookingAdapter.ts`):** Complete live HTTP adapter connecting React UI to the Express backend when `VITE_USE_LIVE_BOOKING=true` (217 tests passing).
+- **Bounded AI Recommendation Agent (`POST /api/agent/recommend`):** Grounded study partner match explainer implementing formula `35C + 25T + 20P + 10L + 10G`, allowlisted read-only tools, zero mutation invariant, and deterministic offline template fallback.
+- **Documentation & Evidence:**
+  - [Deliverable 2 Demonstration Runbook](docs/D2-runbook.md)
+  - [Deliverable 2 Test Evolution Log](docs/test_evolution.md)
+  - [Requirements Traceability Matrix](required%20docs/03-initial-traceability-matrix.md)
+  - [AI Engineering Log](required%20docs/05-ai-engineering-log.md)
 
 ## Planned Repository Layout
 

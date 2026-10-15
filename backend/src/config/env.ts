@@ -3,6 +3,8 @@ import path from 'path';
 
 // Load .env from backend directory if present
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 export interface EnvConfig {
   nodeEnv: string;

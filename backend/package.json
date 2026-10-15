@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Campus Duo PostgreSQL-backed booking service",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "ts-node src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest"
