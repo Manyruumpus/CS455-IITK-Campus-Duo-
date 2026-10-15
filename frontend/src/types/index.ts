@@ -19,6 +19,7 @@ export interface UserSession {
   hasStudyConsent: boolean;
   hasSocialConsent: boolean;
   avatarUrl?: string;
+  sessionToken?: string;
 }
 
 // --- Independent Consent Records ---

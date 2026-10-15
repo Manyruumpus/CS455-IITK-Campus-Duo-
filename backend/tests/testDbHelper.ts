@@ -183,3 +183,48 @@ export async function cleanupTestData(
     client.release();
   }
 }
+
+export async function deleteTestUser(emailPattern: string): Promise<void> {
+  const pool = getMigratorPool();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN;');
+    const userRes = await client.query<{ user_id: string }>(
+      `SELECT user_id FROM campus_duo.user_account WHERE email = $1 OR email LIKE $1`,
+      [emailPattern]
+    );
+    const userIds = userRes.rows.map((r) => r.user_id);
+    if (userIds.length > 0) {
+      await client.query(`DELETE FROM campus_duo.auth_session WHERE user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.auth_credential WHERE user_id = ANY($1::uuid[])`, [userIds]);
+      const bRes = await client.query<{ booking_id: string }>(
+        `SELECT DISTINCT booking_id FROM campus_duo.booking_participant WHERE user_id = ANY($1::uuid[])
+         UNION
+         SELECT DISTINCT booking_id FROM campus_duo.booking WHERE booker_id = ANY($1::uuid[])`,
+        [userIds]
+      );
+      const bIds = bRes.rows.map((r) => r.booking_id);
+      if (bIds.length > 0) {
+        await client.query(`DELETE FROM campus_duo.idempotency_record WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.outbox_event WHERE aggregate_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.audit_event WHERE target_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.booking_participant WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`UPDATE campus_duo.booking SET rescheduled_from_booking_id = NULL WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+        await client.query(`DELETE FROM campus_duo.booking WHERE booking_id = ANY($1::uuid[])`, [bIds]);
+      }
+      await client.query(`DELETE FROM campus_duo.idempotency_record WHERE actor_user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.audit_event WHERE actor_user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.connection WHERE user_a_id = ANY($1::uuid[]) OR user_b_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.consent_record WHERE user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.student_profile WHERE user_id = ANY($1::uuid[])`, [userIds]);
+      await client.query(`DELETE FROM campus_duo.user_account WHERE user_id = ANY($1::uuid[])`, [userIds]);
+    }
+    await client.query('COMMIT;');
+  } catch (err) {
+    await client.query('ROLLBACK;');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+

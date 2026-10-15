@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { useDemoAuth } from '@/app/context/DemoAuthContext';
 
 export const ForbiddenPage: React.FC = () => {
-  const { session, switchRole } = useDemoAuth();
+  const { session } = useDemoAuth();
 
   return (
     <div className="space-y-5">
@@ -28,13 +28,6 @@ export const ForbiddenPage: React.FC = () => {
             Return to Student App
           </Button>
         </Link>
-        <Button
-          variant="ember"
-          size="sm"
-          onClick={() => switchRole('ROLE_ADMIN')}
-        >
-          Switch to Admin Role (Demo)
-        </Button>
       </div>
     </div>
   );

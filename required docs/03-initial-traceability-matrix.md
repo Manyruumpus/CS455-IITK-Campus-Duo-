@@ -8,8 +8,8 @@ Each row maps a requirement to a user story, design element, proposed Jira backl
 
 | Requirement | Story | Architecture/design | Backlog | Planned verification | Actual Jira key | PR/commit | Test ID/result |
 |---|---|---|---|---|---|---|---|
-| FR-01 | US-01 | Auth and identity | BL-01 | Allowed-domain verification; unverified denial | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/auth.test.ts` (6 tests) — PASS |
-| FR-02 | US-01, US-07 | RBAC and admin guard | BL-02 | Student request to admin API denied | TBD | TBD | TBD / Not run (D3) |
+| FR-01 | US-01 | Auth and identity | BL-01 | Allowed-domain verification; unverified denial; local registration | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/auth.test.ts` (6 tests) + `backend/tests/auth.lifecycle.test.ts` (17 tests) + `frontend/src/tests/auth.local.test.tsx` (7 tests) — PASS |
+| FR-02 | US-01, US-07 | RBAC and admin guard | BL-02 | Student request to admin API denied (403); UI role toggle removed | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/auth.lifecycle.test.ts` (403 Forbidden on `/api/admin/summary`) + `frontend/src/tests/auth.local.test.tsx` — PASS |
 | FR-03 | US-02, US-08 | Profile and safety | BL-03 | Hidden/blocked bilateral exclusion | TBD | TBD | TBD / Not run (D3) |
 | FR-04 | US-03 | Scoring strategy, safe projections | BL-04 | Hand-computed scores, missing data, tie/reasons | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/agent.safety.test.ts` (Formula 35C+25T+20P+10L+10G, missing data renormalization) — PASS |
 | FR-05 | US-04 | Match module | BL-05 | Reciprocal likes, repeat-like idempotence | TBD | TBD | TBD / Not run (D3) |
@@ -27,7 +27,7 @@ Each row maps a requirement to a user story, design element, proposed Jira backl
 | NFR-02 | US-01, US-07 | RBAC, booking ownership | BL-02 | Unauthorized and cross-user API tests | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/bookingRetrieval.test.ts` (11 tests: creator/companion read, 403 non-participant) — PASS |
 | NFR-03 | US-03, US-09 | Safe projection, redaction | BL-10 | Hidden data absent in cards, agent and logs | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/agent.safety.test.ts` (03_study_candidates.sql projection redaction) — PASS |
 | NFR-04 | US-05, US-09 | Transaction failure path, fallback | BL-11 | DB/LLM failure injection | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/booking.test.ts` (Rollback) + `backend/tests/agent.safety.test.ts` (LLM failure fallback) — PASS |
-| NFR-05 | All MVP stories | CI/testing plan | BL-16 | Coverage report; justify exclusions | KAN-35 | `feat/KAN-35-booking-backend` | Full test execution (49 backend, 217 frontend tests passing) — PASS |
+| NFR-05 | All MVP stories | CI/testing plan | BL-16 | Coverage report; justify exclusions | KAN-35 | `feat/KAN-35-booking-backend` | Full test execution (66 backend, 224 frontend tests passing) — PASS |
 | NFR-06 | US-03, US-05 | Load-test harness | BL-16 | 100 DAU/250 transactions/day baseline model | TBD | TBD | TBD / Not run (D3) |
 | NFR-07 | US-03, US-05 | Performance budget TBD | BL-16 | p95 and throughput under agreed workload | TBD | TBD | TBD / Not run (D3) |
 | NFR-08 | US-10 | Audit/outbox | BL-12 | Event correlation/retention test | KAN-35 | `feat/KAN-35-booking-backend` | `backend/tests/booking.test.ts` (Transactional outbox_event & audit_event verification) — PASS |

@@ -68,5 +68,23 @@ These are review candidates **from this drafting session and proposal baseline**
 
 ---
 
+### Entry AIL-004 — Local Account Lifecycle, Session Tokens & Authoritative RBAC
+
+| Field | Record |
+|---|---|
+| **Date** | 15 October 2026 |
+| **Requester** | Campus Duo Engineering Team (Mohit Parihar) |
+| **Tool / Model** | Antigravity AI Pair Programmer (DeepMind) |
+| **Input** | `01-requirements-and-use-cases.md#FR-01,FR-02`, `02-architecture-and-design.md`, `database/migrations/V008__runtime_access_privileges.sql`, `testDbHelper.ts`. |
+| **User Request** | Extend Campus Duo D2 to implement a local account lifecycle (registration and login with `@iitk.ac.in` email addresses, scrypt password hashing, session tokens, current-user endpoint), enforce authoritative backend RBAC guarding administrative endpoints (`/api/admin/*`), remove client-side `Role: Student / Admin` switcher buttons from navigation headers, and verify end-to-end booking for newly registered students. |
+| **Generated Artifacts** | `database/migrations/V009__local_auth_and_sessions.sql`, `backend/src/services/passwordService.ts`, `backend/src/services/authService.ts`, `backend/src/routes/auth.ts`, `backend/src/routes/admin.ts`, `backend/src/middleware/auth.ts`, `backend/tests/auth.lifecycle.test.ts`, `frontend/src/features/auth/LoginPage.tsx`, `frontend/src/tests/auth.local.test.tsx`, `frontend/src/components/layout/StudentLayout.tsx`, `frontend/src/components/layout/AdminLayout.tsx`, `frontend/src/features/error/ForbiddenPage.tsx`. |
+| **AI Suggestions** | (1) Implement a stored procedure `campus_duo.register_student` with `SECURITY DEFINER` to allow student registration without granting broad table `INSERT` privileges on `user_account` to `campus_duo_app`. (2) Automatically create a mutual `STUDY` connection with seed student Sam upon registration so fresh students can immediately reserve study tables without pre-existing mock connections. (3) Use Node's built-in `node:crypto` `scryptSync` and `timingSafeEqual` for memory-hard, dependency-free password hashing. (4) Remove interactive role toggle buttons from `StudentLayout.tsx`, `AdminLayout.tsx`, and `ForbiddenPage.tsx`, replacing them with read-only role badges and Sign Out buttons. (5) Provide a unified authentication middleware accepting `Authorization: Bearer <sessionToken>` with fallback to `X-Campus-Duo-Test-Actor` in development mode. |
+| **Human Critique & Edits** | Discovered column shadowing in PL/pgSQL function parameter naming when using `RETURNS TABLE` (`user_id` ambiguity); resolved by prefixing output parameters (`out_user_id`, etc.); fixed deletion order in `deleteTestUser` helper to respect foreign key constraints on `booking_connection_fk` and `audit_event_actor_fk`; preserved `isDemoAuthEnabled` honest notice in `LoginPage.tsx` for production mode. |
+| **Reviewer & Date** | Mohit Parihar, 15 October 2026 |
+| **Decision & Evidence** | **ACCEPTED & VERIFIED.** 17/17 backend tests passed in `backend/tests/auth.lifecycle.test.ts` (backend total: 66/66 passed across 9 files). 7/7 frontend tests passed in `frontend/src/tests/auth.local.test.tsx` (frontend total: 224/224 passed across 21 files). Clean builds and zero typecheck errors. |
+
+---
+
 **Review rule:** An AI-produced draft does not constitute proof of integration, test execution, project approval or a teammate's critical evaluation. All recorded evidence reflects actual test executions against the development environment.
+
 

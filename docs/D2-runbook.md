@@ -16,6 +16,7 @@ Deliverable 2 delivers the core vertical slice of **Campus Duo**:
 3. **Participant-Authorized Retrieval & Booking History:** `GET /api/booking` and `GET /api/booking/:bookingId` enforcing creator/companion ownership and preventing cross-user data leakage.
 4. **Live Frontend HTTP Booking Adapter:** React 18 frontend communicating with the Express backend when `VITE_USE_LIVE_BOOKING=true`.
 5. **Bounded Read-Only AI Recommendation Agent:** `POST /api/agent/recommend` implementing the deterministic formula `35C + 25T + 20P + 10L + 10G`, allowlisted read-only tools, zero mutation invariant, grounding assertions, and offline template fallback.
+6. **Local Account Lifecycle & Authoritative RBAC:** Student registration strictly restricted to `@iitk.ac.in` domains (`POST /api/auth/register`), secure `scrypt` credential hashing, session tokens (`Authorization: Bearer <sessionToken>`), and backend RBAC protecting `/api/admin/*` from student access (`403 Forbidden`).
 
 ---
 
@@ -28,7 +29,7 @@ Deliverable 2 delivers the core vertical slice of **Campus Duo**:
 - **PowerShell / Bash:** Standard shell environment
 
 ### PostgreSQL Database & Roles
-The database `campus_duo_dev` must have migrations `V001__init_accounts.sql` through `V008__runtime_access_privileges.sql` applied, alongside development seed data (`database/seeds/02_development_seed.sql`).
+The database `campus_duo_dev` must have migrations `V001__init_accounts.sql` through `V009__local_auth_and_sessions.sql` applied, alongside development seed data (`database/seeds/02_development_seed.sql`).
 
 Two primary database roles are configured:
 - `campus_duo_migrator`: DDL and migration execution.
@@ -270,13 +271,61 @@ curl -s -X POST http://localhost:4000/api/agent/recommend `
 
 ---
 
+### Step 8: Student Registration & Login Lifecycle
+```powershell
+# 1. Register a fresh student account (strictly requires @iitk.ac.in)
+curl -s -X POST http://localhost:4000/api/auth/register `
+  -H "Content-Type: application/json" `
+  -d '{
+    "email": "fresh.student@iitk.ac.in",
+    "displayName": "Fresh Student",
+    "password": "StudentPass123!"
+  }'
+
+# Expected Response (201 Created):
+# Returns user object (ROLE_STUDENT) and session token without password hash.
+
+# 2. Login with registered student credentials
+curl -s -X POST http://localhost:4000/api/auth/login `
+  -H "Content-Type: application/json" `
+  -d '{
+    "email": "fresh.student@iitk.ac.in",
+    "password": "StudentPass123!"
+  }'
+
+# 3. Retrieve authenticated user identity using Bearer token
+curl -s http://localhost:4000/api/auth/me `
+  -H "Authorization: Bearer <session_token>"
+```
+
+---
+
+### Step 9: Authoritative Role-Based Access Control (RBAC) Guard
+```powershell
+# 1. Access admin summary as Administrator -> 200 OK
+curl -s -X POST http://localhost:4000/api/auth/login `
+  -H "Content-Type: application/json" `
+  -d '{ "email": "admin@iitk.ac.in", "password": "AdminPass123!" }'
+
+curl -s http://localhost:4000/api/admin/summary `
+  -H "Authorization: Bearer <admin_session_token>"
+# Returns: { "data": { "systemStatus": "OPERATIONAL", "activeLocationsCount": ..., ... } }
+
+# 2. Attempt admin access as Student -> 403 Forbidden
+curl -s http://localhost:4000/api/admin/summary `
+  -H "Authorization: Bearer <student_session_token>"
+# Returns: { "error": { "code": "FORBIDDEN", "message": "Access denied. Requires one of roles: [ROLE_ADMIN]" } }
+```
+
+---
+
 ## 5. Automated Test Suites Summary
 
 | Suite | Location | Command | Test Count | Result |
 |---|---|---|---|---|
-| **Backend Full Suite** | `backend/` | `npm test` | 49 tests (8 files) | **100% PASS** |
+| **Backend Full Suite** | `backend/` | `npm test` | 66 tests (9 files) | **100% PASS** |
 | **Backend TypeScript Compile** | `backend/` | `npm run build` | `tsc` compilation | **0 errors** |
-| **Frontend Full Suite** | `frontend/` | `npm test` | 217 tests (20 files) | **100% PASS** |
+| **Frontend Full Suite** | `frontend/` | `npm test` | 224 tests (21 files) | **100% PASS** |
 | **Frontend Typecheck** | `frontend/` | `npm run typecheck` | `tsc --noEmit` | **0 errors** |
 | **Frontend Bundle Build** | `frontend/` | `npm run build` | `vite build` | **Clean Bundle** |
 | **Live Integration Suite** | `frontend/` | `npm test -- src/tests/httpBookingLive.integration.test.ts` | 7 tests | **100% PASS** |
@@ -290,7 +339,7 @@ In accordance with course guidelines and the D2 implementation plan, the followi
 | Decision ID | Topic | Current D2 Status | Deferred Scope & Rationale |
 |---|---|---|---|
 | **DEC-01** | Social / Dating Mode Scope | Study mode is fully supported. Social mode UI exists in mock state. | Dating-specific profile fields and romantic matching are deferred. Study partnerships are the core requirement for Deliverable 2. |
-| **DEC-05** | Production SSO / Authentication | Development test harness header `X-Campus-Duo-Test-Actor` is used. Validates active student UUIDs in database. | Production IITK CC SSO / LDAP / OAuth provider is deferred pending institute infrastructure approval. |
+| **DEC-05** | Production SSO / Institutional IdP | Local account lifecycle with `@iitk.ac.in` domain validation, scrypt password hashing, session tokens, and authoritative backend RBAC are implemented and verified (`V009`). | Institutional IITK CC SSO / LDAP / OAuth provider is deferred pending institute infrastructure approval. |
 | **DEC-08** | In-App Messaging Scope | Direct messaging disabled (`isMessagingEnabled: false`). Routes return 404. | Real-time WebSocket chat and contact handle exchange are deferred to D3. |
 | **DEC-10 / DEC-22** | Booking Partner Approval Policy | Auto-acceptance policy (`partner_approval_status = 'NOT_REQUIRED'`) is enforced per migration `V005` check constraint. | Mutual confirmation grace period or multi-party RSVP states are deferred pending product review. |
 | **DEC-12** | Transactional Outbox Dispatch Daemon | Events are reliably written to `campus_duo.outbox_event` inside the booking transaction. | Background consumer worker daemon dispatching external emails or notifications is deferred to D3. |

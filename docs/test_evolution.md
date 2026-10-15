@@ -34,7 +34,7 @@ This document records the empirical evolution, defect diagnostics, remediation s
 | **Database Name** | `campus_duo_dev` |
 | **Database Application Role** | `campus_duo_app` (restricted privileges per `V008`) |
 | **Database Migrator Role** | `campus_duo_migrator` |
-| **Applied Migrations** | `V001__init_accounts.sql` through `V008__runtime_access_privileges.sql` |
+| **Applied Migrations** | `V001__init_accounts.sql` through `V009__local_auth_and_sessions.sql` |
 | **Frontend Framework** | React 18 + Vite 6.4.3 + Vitest 5.0.3 |
 | **Backend Framework** | Node.js + Express 4.21.2 + Vitest 2.1.8 |
 
@@ -42,12 +42,13 @@ This document records the empirical evolution, defect diagnostics, remediation s
 
 #### Backend Suite Execution (from `X:\backend`)
 ```powershell
-# Run the full automated backend test suite (49 tests across 8 files)
+# Run the full automated backend test suite (66 tests across 9 files)
 npm test
 
 # Run individual test suites
 npx vitest run tests/health.test.ts
 npx vitest run tests/auth.test.ts
+npx vitest run tests/auth.lifecycle.test.ts
 npx vitest run tests/availability.test.ts
 npx vitest run tests/locations.test.ts
 npx vitest run tests/booking.test.ts
@@ -61,11 +62,14 @@ npm run build
 
 #### Frontend Suite Execution (from `X:\frontend`)
 ```powershell
-# Run full frontend test suite (217 tests across 20 files)
+# Run full frontend test suite (224 tests across 21 files)
 npm test
 
 # Run HTTP adapter unit and contract tests
 npm test -- src/tests/httpBookingAdapter.test.ts
+
+# Run local authentication and RBAC UI tests
+npm test -- src/tests/auth.local.test.tsx
 
 # Run live integration tests against running backend
 npm test -- src/tests/httpBookingLive.integration.test.ts
@@ -256,6 +260,48 @@ npm run build
 
 ---
 
+### Defect TE-007: Local Account Lifecycle, Session Management, and Authoritative RBAC Enforcement
+
+- **Defect ID:** TE-007
+- **Component:** Authentication & Authorization Architecture (`backend/src/services/authService.ts`, `passwordService.ts`, `middleware/auth.ts`, `routes/auth.ts`, `routes/admin.ts`, `database/migrations/V009__local_auth_and_sessions.sql`, `frontend/src/features/auth/LoginPage.tsx`, `components/layout/StudentLayout.tsx`, `components/layout/AdminLayout.tsx`, `features/error/ForbiddenPage.tsx`).
+- **Initial Vulnerability / Failure Symptom:**
+  1. The UI exposed a `Role: Student / Admin` toggle button group in `StudentLayout.tsx` and `AdminLayout.tsx`, and a "Switch to Admin Role (Demo)" button in `ForbiddenPage.tsx`, allowing arbitrary client-side privilege escalation.
+  2. No backend account registration or login endpoints existed; unmapped mock accounts (e.g. `usr-student-fresh`) were rejected by live booking adapters.
+  3. No persistent credential storage or session tokens existed in PostgreSQL; authentication relied solely on development header `X-Campus-Duo-Test-Actor`.
+  4. Administrative endpoints (`/api/admin/*`) were not mounted or guarded on the backend.
+- **Root Cause:**
+  Lack of a backend-established identity lifecycle, missing database session/credential tables, absent backend RBAC guards on administrative routes, and development client-side role toggle buttons exposed in user-facing navigation shells.
+- **Resolution:**
+  1. **Database Migration V009 (`V009__local_auth_and_sessions.sql`):**
+     - Created `campus_duo.auth_credential` (`password_hash` with scrypt algorithm) and `campus_duo.auth_session` (`session_token`, `expires_at`, `user_id`, `role`).
+     - Created stored procedure `campus_duo.register_student(p_email, p_display_name, p_password_hash)` with `SECURITY DEFINER` preserving least-privilege table grants on `user_account` (`campus_duo_app` has no direct `INSERT` grant on `user_account`).
+     - Established automatic mutual `STUDY` connection with seed student Sam (`...D502`) so newly registered students can immediately reserve study tables.
+     - Seeded credentials for admin (`admin@iitk.ac.in` / `AdminPass123!`), Alex, and Sam.
+  2. **Cryptographic Password Service (`passwordService.ts`):** Implemented scrypt KDF with per-user salt and timing-safe equal verification using native `node:crypto`.
+  3. **Domain Validation & Auth Service (`authService.ts`):**
+     - Enforces strict `@iitk.ac.in` domain validation (rejecting lookalike domains like `iitk.ac.in.attacker.com`, subdomains like `@sub.iitk.ac.in`, and empty local parts).
+     - Enforces password minimum length (8 characters).
+     - Strictly enforces least-privilege `ROLE_STUDENT` on registration (ignoring or rejecting any role override attempt).
+     - Handles duplicate email rejection with HTTP 409 Conflict.
+  4. **Session Token Middleware & RBAC (`middleware/auth.ts`):**
+     - Implemented `Authorization: Bearer <sessionToken>` session validation querying persistent session storage.
+     - Maintained backward-compatible fallback to `X-Campus-Duo-Test-Actor` in development mode.
+     - Implemented `requireRole(...roles)` returning `403 Forbidden` for unauthorized actors.
+  5. **Admin Route (`routes/admin.ts`):** Mounted `/api/admin/summary` strictly guarded by `requireRole('ROLE_ADMIN')`.
+  6. **UI Role Toggle Removal:**
+     - Removed interactive role switcher buttons from `StudentLayout.tsx` and `AdminLayout.tsx` (replaced with read-only role indicator badge and Sign Out button).
+     - Removed "Switch to Admin Role (Demo)" button from `ForbiddenPage.tsx`.
+  7. **Frontend Local Auth Form (`LoginPage.tsx`):** Added `@iitk.ac.in` credential sign-in and student registration tabs while retaining demo shortcuts for evaluation. Updated `HttpBookingAdapter.ts` to attach `Authorization: Bearer <sessionToken>`.
+- **Regression Tests Added:**
+  - `backend/tests/auth.lifecycle.test.ts` (17 tests: registration domain validation, attack lookalikes, privilege escalation prevention, duplicate 409, login credentials, me endpoint, logout invalidation, RBAC student 403 vs admin 200, end-to-end fresh student booking).
+  - `frontend/src/tests/auth.local.test.tsx` (7 tests: login/register tab toggle, client validation, successful API login session, StudentLayout read-only badge without admin toggle, ForbiddenPage without admin button).
+- **Verification Output:**
+  - Backend: 9 test files passed, 66 tests passed (100% pass rate).
+  - Frontend: 21 test files passed, 224 tests passed (100% pass rate).
+  - Zero build or typecheck warnings.
+
+---
+
 ## Section D: Verification Milestones Table
 
 | Milestone | Timestamp | Backend Tests | Frontend Tests | Build Status | Scope & Summary of Changes |
@@ -268,6 +314,7 @@ npm run build
 | **M6: Booking Retrieval** | 2026-10-15 07:30 | 40 / 40 (7 files) | 217 / 217 (20 files) | PASS | Added `GET /api/booking`, `GET /api/booking/:id`, ownership authorization, demo alias mapping (`TE-003`, `TE-004`). |
 | **M7: AI Agent & Safety** | 2026-10-15 08:45 | 49 / 49 (8 files) | 217 / 217 (20 files) | PASS | Added `POST /api/agent/recommend`, deterministic scoring `35C+25T+20P+10L+10G`, allowlisted read-only tools, injection defense, template fallback (`TE-006`). |
 | **M8: Final Acceptance** | 2026-10-15 08:58 | 49 / 49 (8 files) | 217 / 217 (20 files) | PASS | Clean builds (`tsc` + `vite build`), all live PostgreSQL integration tests verified, documentation finalized. |
+| **M9: Auth Lifecycle & RBAC** | 2026-10-15 10:35 | 66 / 66 (9 files) | 224 / 224 (21 files) | PASS | Migration V009, local registration/login with `@iitk.ac.in`, session management, authoritative RBAC (`/api/admin/summary`), UI role-switcher removal (`TE-007`). |
 
 ---
 
@@ -275,7 +322,8 @@ npm run build
 
 | ID | Category | Requirement / Capability | Verification Evidence | Status |
 |---|---|---|---|---|
-| **FR-01** | Functional | Student identity and verification guard | `backend/tests/auth.test.ts` (6 tests) | **VERIFIED** |
+| **FR-01** | Functional | Student identity and verification guard | `backend/tests/auth.test.ts` (6 tests) + `backend/tests/auth.lifecycle.test.ts` (17 tests) | **VERIFIED** |
+| **FR-02** | Functional | Authoritative Role-Based Access Control (RBAC) & Admin Guard | `backend/tests/auth.lifecycle.test.ts` (403 for students, 200 for admin) + `frontend/src/tests/auth.local.test.tsx` (role toggle removal) | **VERIFIED** |
 | **FR-07** | Functional | Two-person study table reservation (UC-01) | `backend/tests/booking.test.ts` (10 tests) | **VERIFIED** |
 | **FR-10** | Functional | Bounded read-only AI agent and tool authorization | `backend/tests/agent.safety.test.ts` (9 tests) | **VERIFIED** |
 | **FR-11** | Functional | Non-LLM deterministic fallback on outage | `backend/tests/agent.safety.test.ts` | **VERIFIED** |

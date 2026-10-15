@@ -25,6 +25,33 @@ export interface ActorContext {
   userId: string;
   role: string;
   displayName: string;
+  email?: string;
+}
+
+export interface UserSummary {
+  userId: string;
+  email: string;
+  displayName: string;
+  role: string;
+  accountStatus: string;
+  verificationStatus: string;
+}
+
+export interface AuthSessionResponse {
+  user: UserSummary;
+  token: string;
+  expiresAt: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  displayName: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface ApiResponse<T> {

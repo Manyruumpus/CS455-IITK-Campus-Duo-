@@ -106,11 +106,15 @@ export class HttpBookingAdapter implements IBookingService {
       );
     }
 
-    return {
+    const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Campus-Duo-Test-Actor': actorId,
       ...extraHeaders,
     };
+    if (actor.sessionToken) {
+      headers['Authorization'] = `Bearer ${actor.sessionToken}`;
+    }
+    return headers;
   }
 
   private async handleResponse<T>(res: Response): Promise<T> {

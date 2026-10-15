@@ -29,7 +29,7 @@ interface NavItem {
 }
 
 export const StudentLayout: React.FC = () => {
-  const { session, switchRole, logout, isDemoAuthEnabled } = useDemoAuth();
+  const { session, logout } = useDemoAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -103,33 +103,20 @@ export const StudentLayout: React.FC = () => {
           <Badge variant="mono" className="hidden lg:inline-flex">Student Portal</Badge>
         </div>
 
-        {/* Right: Demo Role Switcher, Alerts, Theme, User Profile */}
+        {/* Right: Role Indicator, Theme, User Profile */}
         <div className="flex items-center gap-2.5">
-          {/* Demo Role Switcher (Visible ONLY when demo authentication is enabled) */}
-          {isDemoAuthEnabled && (
+          {session && (
             <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-md bg-craft-surface border border-craft-border text-[11px] font-mono">
               <span className="text-craft-subtle pl-1.5">Role:</span>
-              <button
-                onClick={() => switchRole('ROLE_STUDENT')}
-                className="px-2 py-0.5 rounded bg-ember-600 text-white font-medium"
-              >
+              <span className="px-2 py-0.5 rounded bg-ember-600/20 text-ember-400 font-medium border border-ember-500/30">
                 Student
-              </button>
+              </span>
               <button
                 onClick={() => {
-                  switchRole('ROLE_ADMIN');
-                  navigate('/admin/dashboard');
-                }}
-                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
-              >
-                Admin
-              </button>
-              <button
-                onClick={() => {
-                  switchRole('SIGNED_OUT');
+                  logout();
                   navigate('/login');
                 }}
-                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
+                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink transition-colors"
               >
                 Sign Out
               </button>

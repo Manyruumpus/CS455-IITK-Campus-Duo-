@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import crypto from 'crypto';
 import healthRouter from './routes/health';
+import authRouter from './routes/auth';
+import adminRouter from './routes/admin';
 import bookingRouter from './routes/booking';
 import agentRouter from './routes/agent';
 import { errorHandler } from './middleware/errorHandler';
@@ -25,6 +27,8 @@ export function createApp(): express.Application {
 
   // Mount API routers
   app.use('/api', healthRouter);
+  app.use('/api/auth', authRouter);
+  app.use('/api/admin', adminRouter);
   app.use('/api/booking', bookingRouter);
   app.use('/api/agent', agentRouter);
 
