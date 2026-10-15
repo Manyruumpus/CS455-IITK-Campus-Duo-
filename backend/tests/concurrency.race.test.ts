@@ -14,7 +14,7 @@ const CONTESTED_SLOT_ID = '00000000-0000-0000-0000-00000000E099';
 
 describe('Real PostgreSQL Concurrency Race Test (UC-01 & NFR-01)', () => {
   beforeAll(async () => {
-    await cleanupTestData(['test-race-%']);
+    await cleanupTestData(['test-race-%'], [CONTESTED_SLOT_ID]);
 
     // Setup fresh contested slot on PostgreSQL
     await setupTestSlot({
@@ -34,7 +34,7 @@ describe('Real PostgreSQL Concurrency Race Test (UC-01 & NFR-01)', () => {
   });
 
   afterAll(async () => {
-    await cleanupTestData(['test-race-%']);
+    await cleanupTestData(['test-race-%'], [CONTESTED_SLOT_ID]);
     await closeDbPool();
     await closeMigratorPool();
   });

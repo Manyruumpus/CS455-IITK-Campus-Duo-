@@ -26,7 +26,11 @@ const TEST_SLOT_3 = '00000000-0000-0000-0000-00000000E003';
 describe('POST /api/booking — Vertical Slice Integration Suite', () => {
   beforeAll(async () => {
     // Clean up any stale test records from previous runs
-    await cleanupTestData(['test-booking-%', 'test-rollback-%']);
+    await cleanupTestData(['test-booking-%', 'test-rollback-%'], [
+      TEST_SLOT_1,
+      TEST_SLOT_2,
+      TEST_SLOT_3
+    ]);
 
     // Set up test slots using migrator role
     await setupTestSlot({
@@ -66,7 +70,11 @@ describe('POST /api/booking — Vertical Slice Integration Suite', () => {
   });
 
   afterAll(async () => {
-    await cleanupTestData(['test-booking-%', 'test-rollback-%']);
+    await cleanupTestData(['test-booking-%', 'test-rollback-%'], [
+      TEST_SLOT_1,
+      TEST_SLOT_2,
+      TEST_SLOT_3
+    ]);
     await closeDbPool();
     await closeMigratorPool();
   });
