@@ -5,6 +5,8 @@ node_modules/
 /frontend/dist/
 /frontend/dist-ssr/
 /frontend/coverage/
+/backend/dist/
+/backend/coverage/
 *.tsbuildinfo
 
 # Environment files
@@ -17,10 +19,15 @@ node_modules/
 # Logs
 logs/
 *.log
+ai_log.txt
 
 # Local editor settings
 /frontend/.vscode/
 .idea/
+*.swp
+*.swo
+*~
+*.un~
 
 # Operating system files
 .DS_Store
@@ -35,3 +42,4 @@ Desktop.ini
 /frontend/playwright-report/
 __pycache__/
 *.pyc
+/-backup-20261015-191437/

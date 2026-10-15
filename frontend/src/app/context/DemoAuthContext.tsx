@@ -92,6 +92,7 @@ export const DemoAuthProvider: React.FC<DemoAuthProviderProps> = ({
           isOnboarded: false,
           hasStudyConsent: false,
           hasSocialConsent: false,
+          isFirstLogin: true,
         });
       }
     } else {

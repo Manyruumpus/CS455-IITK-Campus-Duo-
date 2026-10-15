@@ -19,6 +19,8 @@ export interface UserSession {
   hasStudyConsent: boolean;
   hasSocialConsent: boolean;
   avatarUrl?: string;
+  sessionToken?: string;
+  isFirstLogin?: boolean;
 }
 
 // --- Independent Consent Records ---
@@ -325,6 +327,7 @@ export interface CampusLocation {
 export interface StudyTableSlot {
   slotId: string;
   locationId: string;
+  locationName?: string;
   tableId?: string;
   tableNumber: string;
   zone: TableZoneType;
@@ -524,11 +527,17 @@ export interface AdminResourceSummary {
   active: boolean;
   tableCount: number;
   futureConfirmedBookings: number;
+  openTime?: string;
+  closeTime?: string;
+  hasPowerOutlets?: boolean;
+  hasWifi6?: boolean;
+  noisePolicy?: CampusLocation['noisePolicy'];
 }
 
 export interface AdminTableResource {
   tableId: string;
   locationId: string;
+  locationName?: string;
   tableNumber: string;
   capacity: 2;
   hasPowerOutlets: boolean;
@@ -550,7 +559,7 @@ export interface AdminLocationCreateRequest {
 export type AdminLocationUpdateRequest = Partial<Omit<AdminLocationCreateRequest, 'locationId'>>;
 
 export interface AdminTableCreateRequest {
-  tableId: string;
+  tableId?: string;
   locationId: string;
   tableNumber: string;
   hasPowerOutlets: boolean;
@@ -559,7 +568,7 @@ export interface AdminTableCreateRequest {
 export type AdminTableUpdateRequest = Partial<Omit<AdminTableCreateRequest, 'tableId'>>;
 
 export interface AdminSlotCreateRequest {
-  slotId: string;
+  slotId?: string;
   locationId: string;
   tableId: string;
   tableNumber: string;

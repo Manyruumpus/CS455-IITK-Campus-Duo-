@@ -78,6 +78,8 @@ function useAdminResourceMutation<TVariables, TResult>(mutationFn: (request: TVa
     onSuccess: () => {
       client.invalidateQueries({ queryKey: queryKeys.admin.all(actorId) });
       client.invalidateQueries({ queryKey: queryKeys.bookings.all(actorId) });
+      client.invalidateQueries({ queryKey: ['admin'] });
+      client.invalidateQueries({ queryKey: ['bookings'] });
     },
   });
 }
@@ -169,7 +171,11 @@ export function useDeactivateAdminLocation() {
   const client = useQueryClient();
   return useMutation<void, AppError, { locationId: string; reason: string; confirm: boolean }>({
     mutationFn: (request) => appServices.admin.deactivateLocation(request.locationId, request.reason, request.confirm, { actorSession: adminSession(session) }),
-    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.admin.all(actorId) }),
+    onSuccess: () => {
+      client.invalidateQueries({ queryKey: queryKeys.admin.all(actorId) });
+      client.invalidateQueries({ queryKey: ['admin'] });
+      client.invalidateQueries({ queryKey: ['bookings'] });
+    },
   });
 }
 
@@ -182,6 +188,8 @@ export function useAdminCancelBooking() {
     onSuccess: () => {
       client.invalidateQueries({ queryKey: queryKeys.admin.all(actorId) });
       client.invalidateQueries({ queryKey: queryKeys.bookings.all(actorId) });
+      client.invalidateQueries({ queryKey: ['admin'] });
+      client.invalidateQueries({ queryKey: ['bookings'] });
       client.invalidateQueries({ queryKey: queryKeys.notifications.all(actorId) });
     },
   });

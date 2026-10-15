@@ -3,18 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "description": "Campus Duo PostgreSQL-backed booking service",
-  "main": "dist/server.js",
+  "main": "dist/src/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/server.js",
+    "start": "node dist/src/server.js",
     "dev": "ts-node src/server.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@types/nodemailer": "^8.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "nodemailer": "^10.1.1",
     "pg": "^8.13.3"
   },
   "devDependencies": {

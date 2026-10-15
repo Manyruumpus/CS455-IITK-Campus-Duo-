@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 
 export const AdminLayout: React.FC = () => {
-  const { switchRole, isDemoAuthEnabled } = useDemoAuth();
+  const { logout } = useDemoAuth();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -82,36 +82,22 @@ export const AdminLayout: React.FC = () => {
             <span>Student View</span>
           </Link>
 
-          {/* Demo Role Switcher */}
-          {isDemoAuthEnabled && (
-            <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-md bg-craft-surface border border-craft-border text-[11px] font-mono">
-              <span className="text-craft-subtle pl-1.5">Role:</span>
-              <button
-                onClick={() => {
-                  switchRole('ROLE_STUDENT');
-                  navigate('/app/dashboard');
-                }}
-                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
-              >
-                Student
-              </button>
-              <button
-                onClick={() => switchRole('ROLE_ADMIN')}
-                className="px-2 py-0.5 rounded bg-amber-600 text-white font-medium"
-              >
-                Admin
-              </button>
-              <button
-                onClick={() => {
-                  switchRole('SIGNED_OUT');
-                  navigate('/login');
-                }}
-                className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink"
-              >
-                Sign Out
-              </button>
-            </div>
-          )}
+          {/* Authenticated Admin Role Badge & Sign Out */}
+          <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-md bg-craft-surface border border-craft-border text-[11px] font-mono">
+            <span className="text-craft-subtle pl-1.5">Role:</span>
+            <span className="px-2 py-0.5 rounded bg-amber-600/20 text-amber-400 font-medium border border-amber-500/30">
+              Admin
+            </span>
+            <button
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              className="px-2 py-0.5 rounded text-craft-muted hover:text-craft-ink transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
 
           <Button
             variant="outline"

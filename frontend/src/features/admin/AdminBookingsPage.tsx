@@ -25,7 +25,16 @@ export const AdminBookingsPage: React.FC = () => {
       </tr>)}</tbody>
     </TableWrapper>
     <Dialog isOpen={!!selected} onClose={() => setSelected(null)} title="Cancel booking" description="Both participants receive the existing deduplicated booking notification. The reason is recorded in the redacted mock audit." footer={<><Button variant="outline" size="sm" onClick={() => setSelected(null)}>Cancel</Button><Button variant="danger" size="sm" isLoading={cancel.isPending} disabled={!reason.trim() || cancel.isPending} onClick={() => { if (!selected || !reason.trim()) return; cancel.mutate({ bookingId: selected, reason, confirm: true }, { onSuccess: () => { setSelected(null); setReason(''); } }); }}>Confirm cancellation</Button></>}>
-      <label htmlFor="booking-cancel-reason" className="text-xs">Required reason</label><textarea id="booking-cancel-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} className="w-full mt-2 bg-craft-base border border-craft-border rounded px-2 py-1 text-xs" />{cancel.isError && <p role="alert" className="text-xs text-red-300 mt-2">{cancel.error.message}</p>}
+      <label htmlFor="booking-cancel-reason" className="text-xs font-semibold text-craft-muted uppercase tracking-wider">Required reason</label>
+      <textarea
+        id="booking-cancel-reason"
+        value={reason}
+        onChange={(event) => setReason(event.target.value)}
+        maxLength={500}
+        placeholder="Provide a reason for administrative cancellation..."
+        className="w-full mt-2 bg-craft-surface border border-craft-border text-craft-ink placeholder-craft-subtle rounded px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-ember-500"
+      />
+      {cancel.isError && <p role="alert" className="text-xs text-red-300 mt-2">{cancel.error.message}</p>}
     </Dialog>
   </div>;
 };

@@ -91,6 +91,7 @@ export const SEED_SESSIONS: Record<string, UserSession> = {
     isOnboarded: false,
     hasStudyConsent: false,
     hasSocialConsent: false,
+    isFirstLogin: true,
   },
   admin: {
     userId: 'usr-admin-senate',

@@ -25,6 +25,33 @@ export interface ActorContext {
   userId: string;
   role: string;
   displayName: string;
+  email?: string;
+}
+
+export interface UserSummary {
+  userId: string;
+  email: string;
+  displayName: string;
+  role: string;
+  accountStatus: string;
+  verificationStatus: string;
+}
+
+export interface AuthSessionResponse {
+  user: UserSummary;
+  token: string;
+  expiresAt: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  displayName: string;
+  password: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface ApiResponse<T> {
@@ -51,6 +78,21 @@ export type TableZoneType =
 
 export type SlotStatus = 'AVAILABLE' | 'RESERVED' | 'OCCUPIED' | 'LOCKED_MAINTENANCE';
 
+export type NoisePolicy = 'ABSOLUTE_SILENCE' | 'WHISPER_COLLAB' | 'CONVERSATIONAL';
+
+export interface CampusLocation {
+  id: string;
+  name: string;
+  building: string;
+  totalTables: number;
+  openTime: string;
+  closeTime: string;
+  hasPowerOutlets: boolean;
+  hasWifi6: boolean;
+  noisePolicy: NoisePolicy;
+  active?: boolean;
+}
+
 export interface StudyTableSlot {
   slotId: string;
   locationId: string;
@@ -76,18 +118,24 @@ export interface BookingParticipant {
 export interface BookingRecord {
   bookingId: string;
   bookerId: string;
-  clientOperationId: string;
+  clientOperationId?: string;
   participants: BookingParticipant[];
+  companionStudentId?: string;
+  companionDisplayName?: string;
   tableId: string;
   tableNumber?: string;
   locationId: string;
   locationName?: string;
   localDate: string;
   slotId: string;
+  timeWindow?: string;
   status: 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+  allowedActions?: ('CANCEL' | 'RESCHEDULE')[];
   partnerApprovalStatus: 'NOT_REQUIRED';
   bookingVersion: number;
   createdAt: string;
+  cancelledAt?: string;
+  rescheduledFromBookingId?: string;
 }
 
 export interface BookingCreationRequest {
@@ -97,4 +145,153 @@ export interface BookingCreationRequest {
   localDate: string;
   slotId: string;
   companionStudentId: string;
+}
+
+export interface BookingCancelRequest {
+  reason?: string;
+  clientOperationId?: string;
+}
+
+export interface BookingRescheduleRequest {
+  bookingId?: string;
+  newLocalDate: string;
+  newSlotId: string;
+  newTableId?: string;
+  newLocationId?: string;
+  clientOperationId?: string;
+}
+
+export type DiscoveryMode = 'STUDY' | 'SOCIAL';
+export type DiscoveryActionType = 'LIKE' | 'PASS' | 'HIDE';
+export type RelationshipStatus = 'NONE' | 'LIKE_SENT' | 'MUTUAL_CONNECTED' | 'DISCONNECTED';
+
+export interface DiscoveryActionResult {
+  actionId: string;
+  actorUserId: string;
+  targetUserId: string;
+  mode: DiscoveryMode;
+  actionType: DiscoveryActionType;
+  relationshipStatus: RelationshipStatus;
+  connectionId?: string | null;
+}
+
+export interface ConnectionSummary {
+  connectionId: string;
+  peerId: string;
+  peerDisplayName: string;
+  peerDepartment?: string;
+  mode: DiscoveryMode;
+  status: RelationshipStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface OtpChallengeResponse {
+  challengeId: string;
+  email: string;
+  message: string;
+}
+
+export interface OtpRequestInput {
+  email: string;
+  displayName?: string;
+}
+
+export interface OtpVerifyRegistrationInput {
+  email?: string;
+  challengeId?: string;
+  otp: string;
+}
+
+export interface OtpVerifyLoginInput {
+  email?: string;
+  challengeId?: string;
+  otp: string;
+}
+
+export interface OtpSessionResponse {
+  user: UserSummary;
+  token: string;
+  expiresAt: string;
+  isFirstLogin: boolean;
+}
+
+export interface AdminResourceSummary {
+  locationId: string;
+  locationName: string;
+  building: string;
+  active: boolean;
+  tableCount: number;
+  futureConfirmedBookings: number;
+  openTime?: string;
+  closeTime?: string;
+  hasPowerOutlets?: boolean;
+  hasWifi6?: boolean;
+  noisePolicy?: NoisePolicy;
+}
+
+export interface AdminTableResource {
+  tableId: string;
+  locationId: string;
+  locationName?: string;
+  tableNumber: string;
+  capacity: 2;
+  hasPowerOutlets: boolean;
+  active: boolean;
+}
+
+export interface AdminLocationCreateRequest {
+  name: string;
+  building: string;
+  totalTables?: number;
+  openTime: string;
+  closeTime: string;
+  hasPowerOutlets?: boolean;
+  hasWifi6?: boolean;
+  noisePolicy?: NoisePolicy;
+}
+
+export interface AdminLocationUpdateRequest {
+  name?: string;
+  building?: string;
+  totalTables?: number;
+  openTime?: string;
+  closeTime?: string;
+  hasPowerOutlets?: boolean;
+  hasWifi6?: boolean;
+  noisePolicy?: NoisePolicy;
+  active?: boolean;
+}
+
+export interface AdminTableCreateRequest {
+  locationId: string;
+  tableNumber?: string;
+  hasPowerOutlets?: boolean;
+}
+
+export interface AdminTableUpdateRequest {
+  locationId?: string;
+  tableNumber?: string;
+  hasPowerOutlets?: boolean;
+  active?: boolean;
+}
+
+export interface AdminSlotCreateRequest {
+  locationId: string;
+  tableId: string;
+  tableNumber?: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  zone?: TableZoneType;
+  status?: SlotStatus;
+}
+
+export interface AdminSlotUpdateRequest {
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+  zone?: TableZoneType;
+  status?: SlotStatus;
+  active?: boolean;
 }

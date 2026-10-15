@@ -497,13 +497,14 @@ export class MockAdminService implements IAdminService {
   ): Promise<AdminTableResource> {
     await scenarioManager.applyScenario(context.signal);
     this.verifyAdminRole(context);
-    validateRequiredId(request.tableId, 'Table');
+    const tableId = request.tableId || 'tbl-' + Math.random().toString(36).slice(2, 9);
+    validateRequiredId(tableId, 'Table');
     validateRequiredLabel(request.tableNumber, 'Table number');
     const location = mockStore.locations.get(request.locationId);
     if (!location) throw new AppError('NOT_FOUND', 'Parent location not found');
     if (location.active === false) throw new AppError('CONFLICT', 'Cannot add a table to an inactive location');
-    if (mockStore.tables.has(request.tableId)) throw new AppError('CONFLICT', 'Table identifier is already in use');
-    const table: AdminTableResource = { ...request, capacity: 2, active: true };
+    if (mockStore.tables.has(tableId)) throw new AppError('CONFLICT', 'Table identifier is already in use');
+    const table: AdminTableResource = { ...request, tableId, capacity: 2, active: true };
     mockStore.tables.set(table.tableId, table);
     this.recordResourceAudit(context, 'CREATE_TABLE', table.tableId);
     return { ...table };
@@ -571,16 +572,18 @@ export class MockAdminService implements IAdminService {
   ): Promise<StudyTableSlot> {
     await scenarioManager.applyScenario(context.signal);
     this.verifyAdminRole(context);
-    validateSlotRequest(request);
-    if (mockStore.slots.has(request.slotId)) throw new AppError('CONFLICT', 'Slot identifier is already in use');
+    const slotId = request.slotId || 'slt-' + Math.random().toString(36).slice(2, 9);
+    validateSlotRequest({ ...request, slotId });
+    if (mockStore.slots.has(slotId)) throw new AppError('CONFLICT', 'Slot identifier is already in use');
     const table = mockStore.tables.get(request.tableId);
     if (!table || table.locationId !== request.locationId) {
       throw new AppError('NOT_FOUND', 'Parent table/location reference is invalid');
     }
 
-    assertNoSlotOverlap(request);
+    assertNoSlotOverlap({ ...request, slotId });
     const slot: StudyTableSlot = {
       ...request,
+      slotId,
       status: table.active && mockStore.locations.get(request.locationId)?.active !== false ? 'AVAILABLE' : 'LOCKED_MAINTENANCE',
       capacity: 2,
       reservedCount: 0,

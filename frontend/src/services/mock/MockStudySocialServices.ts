@@ -32,6 +32,19 @@ import { SocialActionType, SocialActionResult, SocialDiscoveryFilters as SocialF
 import { mockStore } from '@/mocks/store';
 import { scenarioManager } from '@/mocks/scenarios';
 import { emitNotification } from './notificationEvents';
+import { appConfig } from '@/config/features';
+
+const DEMO_USER_MAP: Record<string, string> = {
+  'usr-student-alex': '00000000-0000-0000-0000-00000000D501',
+  'usr-student-sam': '00000000-0000-0000-0000-00000000D502',
+  'usr-student-jordan': '00000000-0000-0000-0000-00000000D503',
+};
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function resolveActorUuid(id: string): string {
+  if (UUID_REGEX.test(id)) return id;
+  return DEMO_USER_MAP[id] || id;
+}
 
 /**
  * Deterministic hash generator for stable near-tie rotation within clusters.
@@ -708,6 +721,62 @@ export class MockStudyService implements IStudyService {
 
       likes.add(targetStudentId);
 
+      const isLiveBooking = appConfig.isLiveBookingEnabled || import.meta.env.VITE_USE_LIVE_BOOKING === 'true';
+      if (isLiveBooking) {
+        try {
+          const rawBaseUrl =
+            import.meta.env.VITE_API_URL ??
+            import.meta.env.VITE_API_BASE_URL ??
+            'http://localhost:4000';
+          const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+          const actorUuid = resolveActorUuid(actor.userId);
+          const targetUuid = resolveActorUuid(targetStudentId);
+
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            'X-Campus-Duo-Test-Actor': actorUuid,
+          };
+          if (actor.sessionToken) {
+            headers['Authorization'] = `Bearer ${actor.sessionToken}`;
+          }
+
+          const fetchFn = typeof window !== 'undefined' ? window.fetch.bind(window) : globalThis.fetch;
+          const res = await fetchFn(`${baseUrl}/api/discovery/actions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              targetStudentId: targetUuid,
+              mode: 'STUDY',
+              action: 'LIKE',
+            }),
+            signal: context.signal,
+          });
+
+          if (res.ok) {
+            const body = await res.json();
+            const relStatus: RelationshipStatus = body?.data?.relationshipStatus || 'PENDING_SENT';
+            if (relStatus === 'MUTUAL_CONNECTED') {
+              let targetLikes = mockStore.studyLikes.get(targetStudentId);
+              if (!targetLikes) {
+                targetLikes = new Set();
+                mockStore.studyLikes.set(targetStudentId, targetLikes);
+              }
+              targetLikes.add(actor.userId);
+            }
+            const status = handleConnectionLike(actor.userId, targetStudentId, 'STUDY');
+            return {
+              targetStudentId,
+              action: 'LIKE',
+              relationshipStatus: relStatus || status,
+              recordedAt: body?.data?.createdAt || now,
+            };
+          }
+        } catch {
+          // Graceful fallback to mock behavior if backend is unreachable
+        }
+      }
+
       const relationshipStatus = handleConnectionLike(actor.userId, targetStudentId, 'STUDY');
 
       return {
@@ -1359,8 +1428,75 @@ export class MockConnectionService implements IConnectionService {
       }
     }
 
+    // Live authoritative backend connection integration
+    const isLive = appConfig.isLiveBookingEnabled || import.meta.env.VITE_USE_LIVE_BOOKING === 'true';
+    if (isLive) {
+      try {
+        const rawBaseUrl =
+          import.meta.env.VITE_API_URL ??
+          import.meta.env.VITE_API_BASE_URL ??
+          'http://localhost:4000';
+        const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+        const actorUuid = resolveActorUuid(actor.userId);
+        const headers: Record<string, string> = {
+          Accept: 'application/json',
+          'X-Campus-Duo-Test-Actor': actorUuid,
+        };
+        if (actor.sessionToken) {
+          headers['Authorization'] = `Bearer ${actor.sessionToken}`;
+        }
+        const fetchFn = typeof window !== 'undefined' ? window.fetch.bind(window) : globalThis.fetch;
+        const res = await fetchFn(`${baseUrl}/api/discovery/connections?mode=${mode}`, {
+          method: 'GET',
+          headers,
+          signal: context.signal,
+        });
+        if (res.ok) {
+          const body = await res.json();
+          if (Array.isArray(body?.data)) {
+            for (const item of body.data) {
+              const connId = item.connectionId;
+              const [studentAId, studentBId] = [actor.userId, item.peerId].sort();
+              derived.set(connId, {
+                connectionId: connId,
+                studentAId,
+                studentBId,
+                mode: item.mode || mode,
+                status: item.status || 'MUTUAL_CONNECTED',
+                createdAt: item.createdAt || new Date(0).toISOString(),
+                updatedAt: item.updatedAt || new Date(0).toISOString(),
+              });
+
+              // Seed peer projection metadata if not already loaded
+              if (!mockStore.publicStudyProfiles.has(item.peerId)) {
+                mockStore.publicStudyProfiles.set(item.peerId, {
+                  userId: item.peerId,
+                  displayName: item.peerDisplayName || 'Study Partner',
+                  department: item.peerDepartment || 'Engineering',
+                  degree: 'B.Tech',
+                  year: 3,
+                  courses: [],
+                  studyStyle: 'PROBLEM_SOLVING',
+                  preferredPace: 'STANDARD_REGULAR',
+                  preferredTimes: ['AFTERNOON'],
+                  activeStatus: 'LOOKING',
+                });
+              }
+            }
+          }
+        }
+      } catch {
+        // Fallback safely to memory store if backend unreachable
+      }
+    }
+
     // Refresh status from the mode-specific Like records on every read.
     return Array.from(derived.values()).map(c => {
+      // If already marked as MUTUAL_CONNECTED from authoritative backend, preserve it
+      if (c.status === 'MUTUAL_CONNECTED') {
+        const isRestricted = isSociallyBlocked(c.studentAId, c.studentBId);
+        return { ...c, isRestricted };
+      }
       const status = deriveRelationshipStatus(c, likes, actor.userId);
       const isRestricted = isSociallyBlocked(c.studentAId, c.studentBId);
       return { ...c, status, isRestricted };
@@ -1377,7 +1513,11 @@ export class MockConnectionService implements IConnectionService {
       throw new AppError(ErrorCode.UNAUTHENTICATED, 'Sign in required');
     }
 
-    const conn = mockStore.connections.get(connectionId) ?? this.deriveConnectionFromId(connectionId);
+    let conn = mockStore.connections.get(connectionId) ?? this.deriveConnectionFromId(connectionId);
+    if (!conn) {
+      const liveConns = await this.listConnections('STUDY', context);
+      conn = liveConns.find(c => c.connectionId === connectionId);
+    }
     if (!conn) {
       throw new AppError(ErrorCode.NOT_FOUND, `Connection ${connectionId} not found`);
     }
