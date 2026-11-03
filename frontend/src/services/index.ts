@@ -16,10 +16,12 @@ import {
 import { UnavailableServiceAdapter } from './unavailable/UnavailableServiceAdapter';
 import { HttpBookingAdapter } from './http/HttpBookingAdapter';
 import { HttpAdminAdapter } from './http/HttpAdminAdapter';
+import { HttpAgentAdapter } from './http/HttpAgentAdapter';
 
 export * from './interfaces';
 export * from './http/HttpBookingAdapter';
 export * from './http/HttpAdminAdapter';
+export * from './http/HttpAgentAdapter';
 
 export interface ServiceSelectionOptions {
   isDemoAuthEnabled?: boolean;
@@ -30,7 +32,7 @@ export interface ServiceSelectionOptions {
  * Creates or retrieves the service bundle based on environment configuration.
  *
  * ARCHITECTURAL ISOLATION RULE:
- * - When isLiveBookingEnabled is true (VITE_USE_LIVE_BOOKING=true), connects booking service and admin inventory service to real Express/PostgreSQL backend via HttpBookingAdapter and HttpAdminAdapter.
+ * - When isLiveBookingEnabled is true (VITE_USE_LIVE_BOOKING=true), connects booking, admin inventory, and read-only AI recommendation services to the backend.
  * - When isLiveBookingEnabled is false:
  *     - If isDemoAuthEnabled is active (dev or demo showcase), uses in-memory MockBookingService and MockAdminService.
  *     - If in default production, strictly returns UnavailableServiceAdapter for booking and all unimplemented services.
@@ -48,10 +50,12 @@ export function getAppServices(options?: ServiceSelectionOptions): AppServices {
   if (!isDemoAuth) {
     const unavailable = new UnavailableServiceAdapter();
     if (isLiveBooking) {
+      const agent = new HttpAgentAdapter();
+      const liveStudy = { ...unavailable.study, submitMatchingQuery: agent.submitMatchingQuery.bind(agent) };
       return {
         auth: unavailable.auth,
         profile: unavailable.profile,
-        study: unavailable.study,
+        study: liveStudy,
         social: unavailable.social,
         connection: unavailable.connection,
         booking: bookingService,

@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { AgentService } from '../services/agentService';
-import { testAuthMiddleware } from '../middleware/auth';
-import { ApiResponse } from '../types';
+import { requireRole, testAuthMiddleware } from '../middleware/auth';
+import { ApiResponse, DomainError } from '../types';
 
 const router = Router();
 const agentService = new AgentService();
@@ -15,6 +15,7 @@ const agentService = new AgentService();
 router.post(
   '/recommend',
   testAuthMiddleware,
+  requireRole('ROLE_STUDENT'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const actor = req.actor!;
@@ -22,10 +23,30 @@ router.post(
 
       const { courseCode, prompt, limit } = req.body || {};
 
+      if (
+        (courseCode !== undefined &&
+          (typeof courseCode !== 'string' ||
+            courseCode.trim().length > 32 ||
+            !/^[A-Za-z0-9-]+$/.test(courseCode.trim()))) ||
+        (prompt !== undefined &&
+          (typeof prompt !== 'string' || prompt.length > 1000)) ||
+        (limit !== undefined &&
+          (typeof limit !== 'number' ||
+            !Number.isInteger(limit) ||
+            limit < 1 ||
+            limit > 50))
+      ) {
+        throw new DomainError(
+          'VALIDATION_ERROR',
+          400,
+          'Invalid recommendation request. Use a course code up to 32 characters, a prompt up to 1000 characters, and a limit from 1 to 50.'
+        );
+      }
+
       const result = await agentService.recommend(actor, {
         courseCode: typeof courseCode === 'string' ? courseCode : undefined,
         prompt: typeof prompt === 'string' ? prompt : undefined,
-        limit: typeof limit === 'number' ? limit : undefined,
+        limit: limit as number | undefined,
       });
 
       const response: ApiResponse<typeof result> = {

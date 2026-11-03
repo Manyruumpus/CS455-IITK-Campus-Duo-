@@ -63,4 +63,13 @@ describe('Service Selection Architecture & Adapter Wiring (VITE_USE_LIVE_BOOKING
       code: ErrorCode.SERVICE_UNAVAILABLE,
     });
   });
+
+  it('exposes only the read-only assistant operation with live services in production mode', async () => {
+    const services = getAppServices({ isDemoAuthEnabled: false, isLiveBookingEnabled: true });
+    const actorSession = { userId: 'student-1', email: 's@example.test', name: 'Student', rollNumber: '1', role: 'ROLE_STUDENT' as const, isOnboarded: true, hasStudyConsent: true, hasSocialConsent: false };
+    await expect(services.study.submitMatchingQuery('CS455', {}, { actorSession }))
+      .rejects.toMatchObject({ code: ErrorCode.UNAUTHENTICATED });
+    await expect(services.study.recordStudyAction('peer-id', 'LIKE', { actorSession }))
+      .rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
+  });
 });

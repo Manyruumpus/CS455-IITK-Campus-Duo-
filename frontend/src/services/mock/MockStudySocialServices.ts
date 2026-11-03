@@ -6,6 +6,7 @@ import {
 } from '@/services/interfaces';
 import {
   StudyRecommendation,
+  CourseEnrollment,
   StudyPreferences,
   AgentMatchResult,
   StudyConsentRecord,
@@ -23,6 +24,7 @@ import {
   PrivateUserProfile,
   PublicStudyProfile,
   RelationshipStatus,
+  AppErrorCode,
   ConnectionSummaryItem,
   ConnectionDetailView,
   ConnectionCounts,
@@ -33,6 +35,7 @@ import { mockStore } from '@/mocks/store';
 import { scenarioManager } from '@/mocks/scenarios';
 import { emitNotification } from './notificationEvents';
 import { appConfig } from '@/config/features';
+import { COURSE_CODE_TO_API } from '../http/HttpAgentAdapter';
 
 const DEMO_USER_MAP: Record<string, string> = {
   'usr-student-alex': '00000000-0000-0000-0000-00000000D501',
@@ -288,7 +291,260 @@ interface StoredAgentQuery {
 
 const mockAgentQueries = new Map<string, StoredAgentQuery>();
 
+export interface MockStudyServiceOptions {
+  baseUrl?: string;
+  fetchFn?: typeof fetch;
+}
+
+interface BackendAgentRecommendation {
+  profile?: {
+    userId?: unknown;
+    displayName?: unknown;
+    department?: unknown;
+    degree?: unknown;
+    year?: unknown;
+    studyStyle?: unknown;
+    preferredPace?: unknown;
+    courses?: unknown;
+  };
+  aiMatchScore?: unknown;
+  aiMatchReasons?: unknown;
+  dataCompletenessScore?: unknown;
+  relationshipStatus?: unknown;
+}
+
 export class MockStudyService implements IStudyService {
+  private readonly agentBaseUrl: string;
+  private readonly agentFetch: typeof fetch;
+
+  constructor(options?: MockStudyServiceOptions) {
+    this.agentBaseUrl = (
+      options?.baseUrl ??
+      import.meta.env.VITE_API_URL ??
+      import.meta.env.VITE_API_BASE_URL ??
+      'http://localhost:4000'
+    ).replace(/\/+$/, '');
+    this.agentFetch =
+      options?.fetchFn ??
+      (typeof window !== 'undefined' ? window.fetch.bind(window) : globalThis.fetch);
+  }
+
+  private mapAgentRecommendation(value: unknown): StudyRecommendation {
+    const item = value as BackendAgentRecommendation;
+    const profile = item?.profile;
+    if (
+      !profile ||
+      typeof profile.userId !== 'string' ||
+      typeof profile.displayName !== 'string' ||
+      typeof item.aiMatchScore !== 'number' ||
+      !Number.isFinite(item.aiMatchScore) ||
+      !Array.isArray(item.aiMatchReasons) ||
+      !item.aiMatchReasons.every((reason) => typeof reason === 'string')
+    ) {
+      throw new AppError(ErrorCode.AGENT_FAILED, 'Agent returned an invalid recommendation.');
+    }
+
+    const rawCourses = Array.isArray(profile.courses) ? profile.courses : [];
+    const courses: CourseEnrollment[] = rawCourses
+      .filter((course): course is { code: string; name?: string; department?: string } =>
+        Boolean(course && typeof course === 'object' && typeof (course as { code?: unknown }).code === 'string')
+      )
+      .map((course) => ({
+        code: course.code,
+        name: course.name || course.code,
+        department: course.department || (typeof profile.department === 'string' ? profile.department : ''),
+      }));
+
+    const scrubReason = (reason: string): string => {
+      if (/overlapping study slots\s*:/i.test(reason) || /compatible availability\s*:/i.test(reason)) {
+        return 'Overlapping study availability';
+      }
+      if (/^(active academic goal|academic goal|goal focus)\s*:/i.test(reason)) {
+        return 'Academic goal compatibility';
+      }
+      if (/^(common preferred location|common study base|preferred base|location)\s*:/i.test(reason)) {
+        return 'Study location preference considered';
+      }
+      return reason;
+    };
+
+    const degree = ['B.Tech', 'M.Tech', 'PhD', 'BS', 'MSc'].includes(String(profile.degree))
+      ? (profile.degree as PublicStudyProfile['degree'])
+      : 'B.Tech';
+    const relationship = typeof item.relationshipStatus === 'string'
+      ? (item.relationshipStatus as RelationshipStatus)
+      : 'NONE';
+
+    return {
+      profile: {
+        userId: profile.userId,
+        displayName: profile.displayName,
+        department: typeof profile.department === 'string' ? profile.department : '',
+        degree,
+        year: typeof profile.year === 'number' ? profile.year : 1,
+        courses,
+        studyStyle: typeof profile.studyStyle === 'string'
+          ? (profile.studyStyle as PublicStudyProfile['studyStyle'])
+          : 'QUIET_FOCUSED',
+        preferredPace: typeof profile.preferredPace === 'string'
+          ? (profile.preferredPace as PublicStudyProfile['preferredPace'])
+          : 'STANDARD_REGULAR',
+        // Exact schedule labels are private and intentionally never mapped.
+        preferredTimes: [],
+        activeStatus: 'LOOKING',
+      },
+      aiMatchScore: item.aiMatchScore,
+      aiMatchReasons: item.aiMatchReasons.map(scrubReason),
+      dataCompletenessScore:
+        typeof item.dataCompletenessScore === 'number' && Number.isFinite(item.dataCompletenessScore)
+          ? item.dataCompletenessScore
+          : 0.6,
+      relationshipStatus: relationship,
+      // Backend factor explanations are deliberately omitted from the UI projection.
+    };
+  }
+
+  private sanitizeFallbackRecommendation(item: StudyRecommendation): StudyRecommendation {
+    const { compatibilityBreakdown: _privateBreakdown, ...publicItem } = item;
+    return {
+      ...publicItem,
+      profile: {
+        ...item.profile,
+        courses: item.profile.courses.map(({ code, name, department }) => ({ code, name, department })),
+        preferredTimes: [],
+      },
+      aiMatchReasons: item.aiMatchReasons.map((reason) => {
+        if (/overlapping study slots\s*:|compatible availability\s*:/i.test(reason)) {
+          return 'Overlapping study availability';
+        }
+        if (/^(active academic goal|academic goal|goal focus)\s*:/i.test(reason)) {
+          return 'Academic goal compatibility';
+        }
+        if (/^(common preferred location|common study base|preferred base|location)\s*:/i.test(reason)) {
+          return 'Study location preference considered';
+        }
+        return reason;
+      }),
+    };
+  }
+
+  private async requestLiveAgent(
+    courseCode: string,
+    prompt: string | undefined,
+    context: ServiceContext
+  ): Promise<AgentMatchResult> {
+    const actor = context.actorSession;
+    if (!actor) {
+      throw new AppError(ErrorCode.UNAUTHENTICATED, 'Sign in required to request matching');
+    }
+    if (!UUID_REGEX.test(resolveActorUuid(actor.userId))) {
+      throw new AppError(ErrorCode.UNAUTHENTICATED, 'A valid authenticated student session is required.');
+    }
+
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    };
+    if (actor.sessionToken) {
+      headers.Authorization = `Bearer ${actor.sessionToken}`;
+    } else {
+      if (!import.meta.env.DEV) {
+        throw new AppError(ErrorCode.UNAUTHENTICATED, 'A valid authenticated student session is required.');
+      }
+      headers['X-Campus-Duo-Test-Actor'] = resolveActorUuid(actor.userId);
+    }
+
+    const controller = new AbortController();
+    const forwardAbort = () => controller.abort();
+    if (context.signal?.aborted) forwardAbort();
+    else context.signal?.addEventListener('abort', forwardAbort, { once: true });
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await this.agentFetch(`${this.agentBaseUrl}/api/agent/recommend`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ courseCode: COURSE_CODE_TO_API[courseCode] ?? courseCode, prompt }),
+        signal: controller.signal,
+      });
+
+      let body: any;
+      try {
+        body = await response.json();
+      } catch {
+        throw new AppError(ErrorCode.AGENT_FAILED, 'Agent returned an invalid response.');
+      }
+
+      if (!response.ok) {
+        const backendCode = body?.error?.code;
+        const knownCodes = Object.values(ErrorCode) as AppErrorCode[];
+        const code = knownCodes.includes(backendCode) ? backendCode as AppErrorCode :
+          response.status === 401 ? ErrorCode.UNAUTHENTICATED :
+          response.status === 403 ? ErrorCode.FORBIDDEN :
+          response.status === 400 ? ErrorCode.VALIDATION_ERROR : ErrorCode.SERVICE_UNAVAILABLE;
+        throw new AppError(code, body?.error?.message || 'Agent recommendation request failed.', {
+          isTransient: response.status >= 500,
+        });
+      }
+
+      const data = body?.data;
+      if (
+        !data ||
+        typeof data.queryId !== 'string' ||
+        !['COMPLETED', 'FALLBACK'].includes(data.status) ||
+        !Array.isArray(data.recommendations) ||
+        !Array.isArray(data.suggestedAlternatives)
+      ) {
+        throw new AppError(ErrorCode.AGENT_FAILED, 'Agent returned an invalid response.');
+      }
+
+      return {
+        queryId: data.queryId,
+        status: data.status,
+        results: data.recommendations.map((item: unknown) => this.mapAgentRecommendation(item)),
+        suggestedAlternatives: data.suggestedAlternatives.map((item: unknown) => this.mapAgentRecommendation(item)),
+        fallbackReason: typeof data.fallbackReason === 'string' ? data.fallbackReason : undefined,
+        generatedAt: typeof data.generatedAt === 'string' ? data.generatedAt : new Date().toISOString(),
+      };
+    } catch (error) {
+      if (context.signal?.aborted) {
+        throw new AppError(ErrorCode.CANCELLED, 'Matching request was cancelled.');
+      }
+      if (error instanceof AppError) throw error;
+      throw new AppError(ErrorCode.SERVICE_UNAVAILABLE, 'Agent recommendation service is unavailable.', {
+        isTransient: true,
+      });
+    } finally {
+      clearTimeout(timeout);
+      context.signal?.removeEventListener('abort', forwardAbort);
+    }
+  }
+
+  private async localAgentFallback(
+    queryId: string,
+    courseCode: string,
+    context: ServiceContext,
+    fallbackReason: string
+  ): Promise<AgentMatchResult> {
+    const recommendations = (await this.listStudyPartners({ courseCode }, context))
+      .slice(0, 3)
+      .map((item) => this.sanitizeFallbackRecommendation(item));
+    const alternatives = recommendations.length === 0
+      ? (await this.listStudyPartners(undefined, context))
+          .filter((item) => !item.profile.courses.some((course) => course.code.toLowerCase() === courseCode.toLowerCase()))
+          .slice(0, 3)
+          .map((item) => this.sanitizeFallbackRecommendation(item))
+      : [];
+    return {
+      queryId,
+      status: 'FALLBACK',
+      fallbackReason: `${fallbackReason} Deterministic fallback candidate recommendations provided.`,
+      results: recommendations,
+      suggestedAlternatives: alternatives,
+      generatedAt: mockStore.getCampusLocalDate(),
+    };
+  }
+
   /** Coordinated reset for all demo state — Stage 07.
    *  Clears the store (sessions, profiles, bookings, connections, study likes,
    *  moderation blocks, notifications, audits, agent queries), social action
@@ -796,7 +1052,7 @@ export class MockStudyService implements IStudyService {
    */
   public async submitMatchingQuery(
     courseCode: string,
-    _preferences: Partial<StudyPreferences>,
+    preferences: Partial<StudyPreferences>,
     context: ServiceContext
   ): Promise<AgentMatchResult> {
     await scenarioManager.applyScenario(context.signal);
@@ -804,29 +1060,69 @@ export class MockStudyService implements IStudyService {
     if (!actor) {
       throw new AppError(ErrorCode.UNAUTHENTICATED, 'Sign in required to request matching');
     }
+    if (actor.role !== 'ROLE_STUDENT') {
+      throw new AppError(ErrorCode.FORBIDDEN, 'Only students can request study partner recommendations.');
+    }
+    if (!actor.hasStudyConsent) {
+      throw new AppError(ErrorCode.FORBIDDEN, 'Active study consent is required to request recommendations.');
+    }
 
     const queryId = `query-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
 
     // Distinct Deterministic Fallback on Agent failure / unavailability
     if (scenarioManager.getScenario().forceAgentFallback) {
-      const allRecs = await this.listStudyPartners(undefined, context);
-      const fallbackResult: AgentMatchResult = {
+      const fallbackResult = await this.localAgentFallback(
         queryId,
-        status: 'FALLBACK',
-        fallbackReason:
-          'Agent recommendation service temporarily unreachable. Deterministic fallback candidate recommendations provided.',
-        results: allRecs.slice(0, 2),
-        generatedAt: mockStore.getCampusLocalDate(),
-      };
+        courseCode,
+        context,
+        'Agent recommendation service temporarily unreachable.'
+      );
       mockAgentQueries.set(queryId, { ownerId: actor.userId, result: fallbackResult });
       return fallbackResult;
     }
 
-    const recommendations = await this.listStudyPartners({ courseCode }, context);
+    // Reuse the app's existing live-backend switch for agent requests; there is no separate agent flag.
+    if (appConfig.isLiveBookingEnabled || import.meta.env.VITE_USE_LIVE_BOOKING === 'true') {
+      try {
+        const result = await this.requestLiveAgent(
+          courseCode,
+          preferences.studyGoals?.trim() || undefined,
+          context
+        );
+        mockAgentQueries.set(result.queryId, { ownerId: actor.userId, result });
+        return result;
+      } catch (error) {
+        const nonFallbackCodes: AppErrorCode[] = [
+          ErrorCode.UNAUTHENTICATED,
+          ErrorCode.FORBIDDEN,
+          ErrorCode.VALIDATION_ERROR,
+          ErrorCode.CANCELLED,
+        ];
+        if (
+          context.signal?.aborted ||
+          (error instanceof AppError &&
+            nonFallbackCodes.includes(error.code))
+        ) {
+          throw error;
+        }
+        const fallbackResult = await this.localAgentFallback(
+          queryId,
+          courseCode,
+          context,
+          'Agent recommendation service temporarily unavailable.'
+        );
+        mockAgentQueries.set(queryId, { ownerId: actor.userId, result: fallbackResult });
+        return fallbackResult;
+      }
+    }
+
+    const recommendations = (await this.listStudyPartners({ courseCode }, context))
+      .map((item) => this.sanitizeFallbackRecommendation(item));
     if (recommendations.length === 0) {
       // Empty exact-match result when no eligible peers match the requested course
       // Broader suggestions returned separately as alternatives with explicit disclaimers
-      const allRecs = await this.listStudyPartners(undefined, context);
+      const allRecs = (await this.listStudyPartners(undefined, context))
+        .map((item) => this.sanitizeFallbackRecommendation(item));
       const alternatives = allRecs.slice(0, 3).map((rec) => ({
         ...rec,
         aiMatchReasons: [

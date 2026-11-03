@@ -17,7 +17,7 @@ export interface AppFeatureFlags {
   isMessagingEnabled: boolean;
   /** Configured partner booking approval simulation policy */
   demoPartnerApprovalPolicy: 'AUTO_APPROVED_DEMO' | 'REQUIRES_EXPLICIT_APPROVAL';
-  /** Whether live HTTP booking adapter is active (VITE_USE_LIVE_BOOKING) */
+  /** Whether live HTTP booking/admin and read-only assistant adapters are active (VITE_USE_LIVE_BOOKING) */
   isLiveBookingEnabled: boolean;
 }
 
@@ -42,7 +42,7 @@ export const getAppConfig = (): AppFeatureFlags => {
       ? 'REQUIRES_EXPLICIT_APPROVAL'
       : 'AUTO_APPROVED_DEMO';
 
-  // Live HTTP booking adapter flag (Task D2)
+  // Shared live backend rollout flag for booking (D2) and the read-only assistant adapter.
   const isLiveBookingEnabled = import.meta.env.VITE_USE_LIVE_BOOKING === 'true';
 
   return {

@@ -126,9 +126,9 @@ export class ScoringEngine {
       minTimesSize > 0 ? sharedTimes.length / minTimesSize : 0.0;
 
     if (sharedTimes.length > 0) {
-      groundedFacts.push(
-        `Overlapping study slots: ${sharedTimes.map((t) => t.toLowerCase()).join(', ')}`
-      );
+      // Use availability only for the server-side score. Exact schedule labels
+      // are private and must not appear in agent explanations or responses.
+      groundedFacts.push('Overlapping study availability');
     }
 
     // --- Factor 3: Study Style (Base weight 10, Optional) ---
@@ -184,7 +184,7 @@ export class ScoringEngine {
     if (hasLocation) {
       if (viewerLoc!.toUpperCase() === candidateLoc!.toUpperCase()) {
         locNorm = 1.0;
-        groundedFacts.push(`Common preferred location: ${candidateLoc}`);
+        groundedFacts.push('Common study location preference');
       } else {
         locNorm = 0.4;
       }
@@ -209,7 +209,7 @@ export class ScoringEngine {
         const union = new Set([...vWords, ...cWords]).size;
         goalsNorm = union > 0 ? Math.max(0.4, common / union) : 0.8;
       }
-      groundedFacts.push(`Active academic goal: ${candidateGoals}`);
+      groundedFacts.push('Academic goal compatibility');
     } else {
       omittedFactors.push('Study Goals');
     }
@@ -261,7 +261,7 @@ export class ScoringEngine {
       25,
       timeNorm,
       sharedTimes.length > 0
-        ? `Overlapping study slots: ${sharedTimes.join(', ')}`
+        ? 'Overlapping study availability'
         : 'No overlapping weekly study windows'
     );
 
@@ -288,7 +288,9 @@ export class ScoringEngine {
           'Preferred Location',
           10,
           locNorm,
-          `Location: ${candidateLoc}`
+          viewerLoc!.toUpperCase() === candidateLoc!.toUpperCase()
+            ? 'Common study location preference'
+            : 'Study location preference considered'
         )
       : undefined;
 
@@ -297,7 +299,7 @@ export class ScoringEngine {
           'Study Goals',
           10,
           goalsNorm,
-          `Goal: ${candidateGoals}`
+          'Academic goal compatibility'
         )
       : undefined;
 

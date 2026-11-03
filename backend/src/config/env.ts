@@ -15,6 +15,45 @@ export interface SmtpConfig {
   from: string;
 }
 
+export interface LlmConfig {
+  enabled: boolean;
+  token?: string;
+  modelId: string;
+  timeoutMs: number;
+  configurationIssue?: string;
+}
+
+export const DEFAULT_HF_MODEL_ID = 'Qwen/Qwen3-4B-Instruct-2507';
+const DEFAULT_HF_TIMEOUT_MS = 20_000;
+const MIN_HF_TIMEOUT_MS = 1_000;
+const MAX_HF_TIMEOUT_MS = 30_000;
+
+export function getLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig {
+  const enabled = env.ENABLE_LLM_INFERENCE === 'true';
+  const token = env.HF_TOKEN?.trim() || undefined;
+  const modelId = env.HF_MODEL_ID?.trim() || DEFAULT_HF_MODEL_ID;
+  const configuredTimeout = env.HF_TIMEOUT_MS;
+  const timeoutMs = configuredTimeout === undefined
+    ? DEFAULT_HF_TIMEOUT_MS
+    : Number(configuredTimeout);
+
+  let configurationIssue: string | undefined;
+  if (enabled) {
+    if (!token) {
+      configurationIssue = 'Inference is enabled but HF_TOKEN is missing.';
+    } else if (!/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelId)) {
+      configurationIssue = 'HF_MODEL_ID is invalid.';
+    } else if (
+      configuredTimeout !== undefined &&
+      (!Number.isInteger(timeoutMs) || timeoutMs < MIN_HF_TIMEOUT_MS || timeoutMs > MAX_HF_TIMEOUT_MS)
+    ) {
+      configurationIssue = 'HF_TIMEOUT_MS must be between 1000 and 30000.';
+    }
+  }
+
+  return { enabled, token, modelId, timeoutMs, configurationIssue };
+}
+
 export interface EnvConfig {
   nodeEnv: string;
   port: number;
@@ -22,6 +61,7 @@ export interface EnvConfig {
   emailTransport: 'smtp' | 'inmemory' | 'auto';
   emailDeliveryRequired: boolean;
   smtp: SmtpConfig;
+  llm: LlmConfig;
   db: {
     host: string;
     port: number;
@@ -67,6 +107,7 @@ export function getEnvConfig(): EnvConfig {
       pass: smtpPass,
       from: emailFrom,
     },
+    llm: getLlmConfig(),
     db: {
       host,
       port: dbPort,

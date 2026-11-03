@@ -20,6 +20,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 import { useToast } from '@/components/ui/Toast';
 import { useDemoAuth } from '@/app/context/DemoAuthContext';
+import { appConfig } from '@/config/features';
 import {
   useStudyRecommendations,
   useRecordStudyAction,
@@ -30,6 +31,12 @@ import { StudyDiscoveryFilters, StudyRecommendation, PreferredStudyTime, StudySt
 export const StudyDiscoveryPage: React.FC = () => {
   const { session } = useDemoAuth();
   const { addToast } = useToast();
+  const isLiveAssistantEnabled = appConfig.isLiveBookingEnabled || import.meta.env.VITE_USE_LIVE_BOOKING === 'true';
+  const assistantModeDescription = isLiveAssistantEnabled
+    ? 'Live backend recommendations are grounded in course enrollment and approved study profile data.'
+    : appConfig.isDemoAuthEnabled
+      ? 'Demo recommendations are generated from local sample profiles and study preferences.'
+      : 'The assistant is unavailable until the live backend is enabled.';
 
   // Filters state
   const [search, setSearch] = useState('');
@@ -196,7 +203,7 @@ export const StudyDiscoveryPage: React.FC = () => {
                 setIsAgentDialogOpen(true);
               }}
             >
-              AI Study Matcher (Demo)
+              AI Study Assistant
             </Button>
             <Link to="/app/study/requests">
               <Button variant="outline" size="sm">
@@ -457,8 +464,8 @@ export const StudyDiscoveryPage: React.FC = () => {
       <Dialog
         isOpen={isAgentDialogOpen}
         onClose={() => setIsAgentDialogOpen(false)}
-        title="AI Study Matcher (Demo Simulator)"
-        description="Submit an academic matching prompt to discover study partners grounded in course schedules and study habits. (Simulated demo mode - immediate return)."
+        title="AI Study Assistant"
+        description={assistantModeDescription}
         footer={
           <div className="flex justify-between w-full items-center text-[11px] text-craft-muted">
             <span>Agent has no booking or messaging authority; suggestions are informational only.</span>
@@ -491,6 +498,7 @@ export const StudyDiscoveryPage: React.FC = () => {
                 placeholder="e.g. Need peer for quiet afternoon problem solving sessions"
                 value={agentPrompt}
                 onChange={(e) => setAgentPrompt(e.target.value)}
+                maxLength={1000}
                 className="w-full px-3 py-1.5 text-xs rounded border border-craft-border bg-craft-surface text-craft-ink focus:outline-none focus:border-ember-500"
               />
             </div>
@@ -502,7 +510,7 @@ export const StudyDiscoveryPage: React.FC = () => {
               disabled={submitAgentMutation.isPending}
               leftIcon={<Sparkles className="w-3.5 h-3.5" />}
             >
-              {submitAgentMutation.isPending ? 'Simulating Agent Matching...' : 'Run Match Query'}
+              {submitAgentMutation.isPending ? 'Finding study partners...' : 'Ask AI Assistant'}
             </Button>
           </form>
 
@@ -512,7 +520,7 @@ export const StudyDiscoveryPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold text-craft-ink flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-ember-400" />
-                  Simulated Agent Findings ({agentResults.status})
+                  AI Assistant Recommendations ({agentResults.status})
                 </span>
                 {agentResults.status === 'FALLBACK' ? (
                   <Badge variant="warning">Deterministic Fallback</Badge>
@@ -542,17 +550,15 @@ export const StudyDiscoveryPage: React.FC = () => {
                         <div>
                           <div className="flex items-center gap-1.5">
                             <p className="font-medium text-craft-ink">{cand.profile.displayName}</p>
-                            <Badge variant="success" className="text-[10px]">Enrolled in {agentCourseCode}</Badge>
+                            {cand.profile.courses.some((course) => course.code.toLowerCase() === agentCourseCode.toLowerCase() || course.code.toLowerCase() === `db05-${agentCourseCode}`.toLowerCase()) && <Badge variant="success" className="text-[10px]">Enrolled in {agentCourseCode}</Badge>}
                           </div>
                           <p className="text-[11px] text-craft-muted">
                             {cand.profile.department} · {cand.aiMatchScore}% Compatibility
                           </p>
                         </div>
-                        <Link to={`/app/study/${cand.profile.userId}`}>
-                          <Button variant="outline" size="sm">
-                            View Profile
-                          </Button>
-                        </Link>
+                        {!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cand.profile.userId) && <Link to={`/app/study/${cand.profile.userId}`}>
+                          <Button variant="outline" size="sm">View Profile</Button>
+                        </Link>}
                       </div>
                     ))}
                   </div>
@@ -589,11 +595,11 @@ export const StudyDiscoveryPage: React.FC = () => {
                             Courses: {cand.profile.courses.map((c) => c.code).join(', ')} · {cand.aiMatchScore}% Overall Compatibility
                           </p>
                         </div>
-                        <Link to={`/app/study/${cand.profile.userId}`}>
+                        {!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cand.profile.userId) && <Link to={`/app/study/${cand.profile.userId}`}>
                           <Button variant="outline" size="sm">
                             View Profile
                           </Button>
-                        </Link>
+                        </Link>}
                       </div>
                     ))}
                   </div>

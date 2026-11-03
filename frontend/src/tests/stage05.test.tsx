@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ import {
   getStableRotationScore,
 } from '@/services/mock/MockStudySocialServices';
 import { UnavailableServiceAdapter } from '@/services/unavailable/UnavailableServiceAdapter';
+import { appServices } from '@/services';
 import {
   UserSession,
   PublicStudyProfile,
@@ -572,14 +573,28 @@ describe('Stage 05 — Study Discovery, Compatibility and Agent Workflow (Target
     it('renders agent matcher dialog and displays simulated results', async () => {
       renderWithProviders('/app/study', ALEX_SESSION);
 
-      const agentBtn = await screen.findByRole('button', { name: /AI Study Matcher \(Demo\)/i });
+      const agentBtn = await screen.findByRole('button', { name: /AI Study Assistant/i });
       fireEvent.click(agentBtn);
 
-      expect(screen.getByText('AI Study Matcher (Demo Simulator)')).toBeInTheDocument();
-      const submitBtn = screen.getByRole('button', { name: /Run Match Query/i });
+      expect(screen.getByRole('heading', { name: 'AI Study Assistant' })).toBeInTheDocument();
+      const submitBtn = screen.getByRole('button', { name: /Ask AI Assistant/i });
       fireEvent.click(submitBtn);
 
-      expect(await screen.findByText(/Simulated Agent Findings/i)).toBeInTheDocument();
+      expect(await screen.findByText(/AI Assistant Recommendations/i)).toBeInTheDocument();
+    });
+
+    it('hides mock profile navigation for UUID-backed live assistant results', async () => {
+      const [mockCandidate] = await new MockStudyService().listStudyPartners(undefined, { actorSession: ALEX_SESSION });
+      const liveCandidate = { ...mockCandidate, profile: { ...mockCandidate.profile, userId: '00000000-0000-0000-0000-00000000D777' } };
+      const submit = vi.spyOn(appServices.study, 'submitMatchingQuery').mockResolvedValue({
+        queryId: 'live-result', status: 'COMPLETED', results: [liveCandidate], generatedAt: '2026-10-15T00:00:00.000Z',
+      });
+      renderWithProviders('/app/study', ALEX_SESSION);
+      fireEvent.click(await screen.findByRole('button', { name: /AI Study Assistant/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Ask AI Assistant/i }));
+      await screen.findByText(liveCandidate.profile.displayName);
+      expect(document.querySelector(`a[href="/app/study/${liveCandidate.profile.userId}"]`)).toBeNull();
+      submit.mockRestore();
     });
   });
 });

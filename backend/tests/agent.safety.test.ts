@@ -1,13 +1,15 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 import { closeDbPool, query } from '../src/config/db';
 import { ScoringEngine } from '../src/services/scoringEngine';
+import { getLlmConfig } from '../src/config/env';
 import {
   AgentService,
   ILlmClient,
   LlmExplanationRequest,
   LlmCandidateExplanation,
+  TemplateLlmClient,
 } from '../src/services/agentService';
 
 const ALEX_ID = '00000000-0000-0000-0000-00000000D501'; // Active student with CS455 & Study Consent
@@ -41,6 +43,16 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(res.status).toBe(200);
       expect(res.body).toHaveProperty('data');
       expect(res.body.data.recommendations.length).toBeGreaterThan(0);
+      const responseJson = JSON.stringify(res.body);
+      expect(responseJson).not.toContain('preferredTimes');
+      expect(responseJson).not.toContain('MON_MORNING');
+      expect(responseJson).not.toContain('WED_EVENING');
+      expect(responseJson).not.toContain('Overlapping study slots:');
+      expect(responseJson).not.toContain('@iitk.ac.in');
+      expect(responseJson).not.toContain('roll_number');
+      expect(responseJson).not.toContain('rollNumber');
+      expect(responseJson).not.toContain('Active academic goal:');
+      expect(responseJson).not.toContain('Common preferred location:');
 
       const bookingsAfter = await query<{ count: string }>(
         'SELECT count(*) FROM campus_duo.booking'
@@ -55,6 +67,16 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
 
       expect(res.status).toBe(401);
       expect(res.body.error.code).toBe('UNAUTHENTICATED');
+    });
+
+    it('rejects authenticated administrator requests with 403 FORBIDDEN', async () => {
+      const res = await request(app)
+        .post('/api/agent/recommend')
+        .set('X-Campus-Duo-Test-Actor', '00000000-0000-0000-0000-00000000D599')
+        .send({ courseCode: 'DB05-CS455' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
     });
   });
 
@@ -96,6 +118,11 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(result.factors.pace?.effectiveWeight).toBe(10);
       expect(result.factors.location?.effectiveWeight).toBe(10);
       expect(result.factors.goals?.effectiveWeight).toBe(10);
+      expect(result.factors.time.explanation).toBe('Overlapping study availability');
+      expect(JSON.stringify(result)).not.toContain('MON_MORNING');
+      expect(JSON.stringify(result)).not.toContain('WED_EVENING');
+      expect(JSON.stringify(result)).not.toContain('LIBRARY');
+      expect(JSON.stringify(result)).not.toContain('Ace the midterms');
     });
 
     it('renormalizes active weights to 100% when optional factors are omitted (completeness = 0.60)', () => {
@@ -166,7 +193,9 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
     it('falls back deterministically when inference client throws or times out', async () => {
       const failingClient: ILlmClient = {
         async generateExplanations(): Promise<LlmCandidateExplanation[]> {
-          throw new Error('Connection refused to LLM provider (ECONNREFUSED)');
+          throw new Error(
+            'Connection refused to LLM provider (ECONNREFUSED) hf_sentinel_test_token'
+          );
         },
       };
 
@@ -179,6 +208,32 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(result.status).toBe('FALLBACK');
       expect(result.fallbackReason).toContain('Inference provider offline');
       expect(result.recommendations.length).toBeGreaterThanOrEqual(1);
+      expect(JSON.stringify(result)).not.toContain('hf_sentinel_test_token');
+    });
+
+    it('uses deterministic fallback without making an unauthenticated request when HF_TOKEN is missing', async () => {
+      const fetchMock = vi.fn();
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = fetchMock as unknown as typeof fetch;
+      try {
+        const result = await new AgentService(
+          undefined,
+          new TemplateLlmClient(),
+          getLlmConfig({ ENABLE_LLM_INFERENCE: 'true' })
+        ).recommend(
+          { userId: ALEX_ID, role: 'ROLE_STUDENT', displayName: 'Alex' },
+          { courseCode: 'DB05-CS455' }
+        );
+
+        expect(result.status).toBe('FALLBACK');
+        expect(result.fallbackReason).toBe(
+          'Inference is enabled but HF_TOKEN is missing.'
+        );
+        expect(result.recommendations.length).toBeGreaterThan(0);
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
     });
   });
 
@@ -207,6 +262,48 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       const candidateReasons = result.recommendations[0]?.aiMatchReasons.join(' ') || '';
       expect(candidateReasons).not.toContain('CS999');
       expect(candidateReasons).not.toContain('root admin token');
+    });
+
+    it('rejects ungrounded claims even when the model returns a valid candidate id', async () => {
+      const ungroundedClient: ILlmClient = {
+        async generateExplanations(req: LlmExplanationRequest) {
+          return req.candidates.map((c) => ({
+            userId: c.userId,
+            explanation: 'A brilliant partner who loves quantum physics',
+          }));
+        },
+      };
+
+      const result = await new AgentService(ungroundedClient).recommend(
+        { userId: ALEX_ID, role: 'ROLE_STUDENT', displayName: 'Alex' },
+        { courseCode: 'DB05-CS455' }
+      );
+
+      expect(result.status).toBe('FALLBACK');
+      expect(result.fallbackReason).toContain('failed grounding validation');
+      expect(
+        result.recommendations
+          .flatMap((item) => item.aiMatchReasons)
+          .join(' ')
+      ).not.toContain('quantum physics');
+    });
+  });
+
+  describe('7. Request bounds and validation', () => {
+    it('rejects oversized prompts and invalid recommendation limits', async () => {
+      const oversizedPrompt = await request(app)
+        .post('/api/agent/recommend')
+        .set('X-Campus-Duo-Test-Actor', ALEX_ID)
+        .send({ prompt: 'x'.repeat(1001) });
+      expect(oversizedPrompt.status).toBe(400);
+      expect(oversizedPrompt.body.error.code).toBe('VALIDATION_ERROR');
+
+      const invalidLimit = await request(app)
+        .post('/api/agent/recommend')
+        .set('X-Campus-Duo-Test-Actor', ALEX_ID)
+        .send({ limit: 51 });
+      expect(invalidLimit.status).toBe(400);
+      expect(invalidLimit.body.error.code).toBe('VALIDATION_ERROR');
     });
   });
 

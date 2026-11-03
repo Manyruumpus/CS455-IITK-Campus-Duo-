@@ -9,7 +9,8 @@ import {
   ViewerProfileData,
   CompatibilityScoreResult,
 } from './scoringEngine';
-import { getEnvConfig } from '../config/env';
+import { getEnvConfig, LlmConfig } from '../config/env';
+import { createHuggingFaceLlmClient } from './huggingFaceLlmClient';
 
 export interface LlmCandidateInput {
   userId: string;
@@ -61,63 +62,6 @@ export class TemplateLlmClient implements ILlmClient {
   }
 }
 
-/**
- * Bounded Ollama client implementation.
- * Connects to local Ollama instance (e.g. qwen3:1.7b or qwen3:4b) with strict timeout and structured output validation.
- */
-export class OllamaLlmClient implements ILlmClient {
-  constructor(
-    private readonly baseUrl: string = 'http://localhost:11434',
-    private readonly model: string = 'qwen3:1.7b',
-    private readonly timeoutMs: number = 2000
-  ) {}
-
-  async generateExplanations(
-    req: LlmExplanationRequest
-  ): Promise<LlmCandidateExplanation[]> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-
-    try {
-      const prompt = `You are a read-only academic matching assistant for IIT Kanpur students.
-Grounded facts for candidates:
-${JSON.stringify(req.candidates, null, 2)}
-
-Provide brief, grounded match explanations strictly citing the facts above.
-Return JSON array with format: [{"userId": "...", "explanation": "..."}]`;
-
-      const res = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.model,
-          prompt,
-          stream: false,
-          format: 'json',
-        }),
-        signal: controller.signal,
-      });
-
-      if (!res.ok) {
-        throw new Error(`Ollama responded with status ${res.status}`);
-      }
-
-      const body = (await res.json()) as any;
-      const parsed = JSON.parse(body.response || '[]');
-      if (!Array.isArray(parsed)) {
-        throw new Error('Malformed output from Ollama');
-      }
-
-      return parsed.map((item: any) => ({
-        userId: String(item.userId || ''),
-        explanation: String(item.explanation || ''),
-      }));
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-}
-
 export interface AgentRecommendationItem {
   profile: {
     userId: string;
@@ -127,7 +71,6 @@ export interface AgentRecommendationItem {
     year?: number;
     studyStyle?: string;
     preferredPace?: string;
-    preferredTimes?: string[];
     courses?: any[];
     activeStatus?: string;
   };
@@ -151,11 +94,24 @@ export class AgentService {
   private readonly scoringEngine = new ScoringEngine();
   private readonly candidatesSql: string;
   private readonly profileSql: string;
+  private readonly primaryLlmClient?: ILlmClient;
+  private readonly fallbackLlmClient: ILlmClient;
+  private readonly llmConfigurationIssue?: string;
 
   constructor(
-    private readonly primaryLlmClient?: ILlmClient,
-    private readonly fallbackLlmClient: ILlmClient = new TemplateLlmClient()
+    primaryLlmClient?: ILlmClient,
+    fallbackLlmClient: ILlmClient = new TemplateLlmClient(),
+    llmConfig: LlmConfig = getEnvConfig().llm
   ) {
+    this.fallbackLlmClient = fallbackLlmClient;
+    this.primaryLlmClient = primaryLlmClient || createHuggingFaceLlmClient(llmConfig);
+    this.llmConfigurationIssue = primaryLlmClient
+      ? undefined
+      : llmConfig.enabled
+        ? llmConfig.configurationIssue ||
+          (!llmConfig.token ? 'Inference is enabled but HF_TOKEN is missing.' : undefined)
+        : undefined;
+
     const findDatabaseFile = (relPath: string): string => {
       const candidates = [
         path.resolve(process.cwd(), relPath),
@@ -223,9 +179,18 @@ export class AgentService {
     explanations: LlmCandidateExplanation[],
     candidateMap: Map<string, { groundedFacts: string[]; displayName: string }>
   ): boolean {
+    const connectiveWords = new Set([
+      'a', 'about', 'and', 'are', 'based', 'because', 'candidate', 'compatible',
+      'for', 'has', 'have', 'is', 'match', 'matches', 'of', 'on', 'partner',
+      'compatibility', 'grounded',
+      'score', 'shared', 'shows', 'study', 'the', 'this', 'with', 'you',
+    ]);
     for (const exp of explanations) {
       const meta = candidateMap.get(exp.userId);
       if (!meta) return false; // Mentioned unknown candidate
+      if (typeof exp.explanation !== 'string' || exp.explanation.length > 500) {
+        return false;
+      }
 
       // Simple hallucination guard: check for invented course codes or claims
       const forbiddenHallucinations = ['CS999', 'MTH999', 'admin', 'password', 'token'];
@@ -233,6 +198,25 @@ export class AgentService {
         if (exp.explanation.toLowerCase().includes(forbidden.toLowerCase())) {
           return false;
         }
+      }
+
+      const groundedVocabulary = new Set(
+        meta.groundedFacts
+          .join(' ')
+          .toLowerCase()
+          .match(/[a-z0-9]+/g) || []
+      );
+      const claims = exp.explanation.toLowerCase().match(/[a-z0-9]+/g) || [];
+      if (
+        claims.length === 0 ||
+        claims.some(
+          (word) =>
+            !connectiveWords.has(word) &&
+            !groundedVocabulary.has(word) &&
+            !/^\d+$/.test(word)
+        )
+      ) {
+        return false;
       }
     }
     return true;
@@ -328,7 +312,6 @@ export class AgentService {
             year: c.year,
             studyStyle: c.study_style || undefined,
             preferredPace: c.preferred_pace || undefined,
-            preferredTimes: c.preferred_times || [],
             courses: c.courses || [],
             activeStatus: c.active_status,
           },
@@ -357,21 +340,13 @@ export class AgentService {
     let status: 'COMPLETED' | 'FALLBACK' = 'COMPLETED';
     let fallbackReason: string | undefined;
 
-    const env = getEnvConfig();
-    const isLlmConfigured = Boolean(
-      this.primaryLlmClient || (process.env.ENABLE_LLM_INFERENCE === 'true')
-    );
-
-    let clientToUse: ILlmClient =
-      this.primaryLlmClient ||
-      (isLlmConfigured
-        ? new OllamaLlmClient()
-        : this.fallbackLlmClient);
+    const isLlmConfigured = Boolean(this.primaryLlmClient);
+    let clientToUse: ILlmClient = this.primaryLlmClient || this.fallbackLlmClient;
 
     try {
       if (!isLlmConfigured) {
         status = 'FALLBACK';
-        fallbackReason =
+        fallbackReason = this.llmConfigurationIssue ||
           'Inference provider offline. Deterministic algorithm recommendations provided.';
         clientToUse = this.fallbackLlmClient;
       }
