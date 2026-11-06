@@ -1,9 +1,0 @@
-{
-  "stopRequestedUtc": "2026-11-06T06:39:48.9334315+00:00",
-  "stoppedUtc": "2026-11-06T06:39:49.0717100+00:00",
-  "restartRequestedUtc": "2026-11-06T06:39:49.0877766+00:00",
-  "restartCommandCompletedUtc": "2026-11-06T06:39:50.2456439+00:00",
-  "outageObservedMilliseconds": 138.2785,
-  "restartCommandMilliseconds": 1157.8673,
-  "postRestartHealthObservedUtc": "2026-11-06T06:39:50.4802941+00:00"
-}
