@@ -30,6 +30,7 @@ All project deliverables and engineering evidence are organized under the reposi
 - [`Deliverables/D3/D3_Final_Project_Report.md`](Deliverables/D3/D3_Final_Project_Report.md): Executive summary, architectural review, and project post-mortem.
 - [`Deliverables/D3/AI_Engineering_Log.md`](Deliverables/D3/AI_Engineering_Log.md): Consolidated AI engineering audit trail.
 - [`Deliverables/D3/Testing_Report.md`](Deliverables/D3/Testing_Report.md): Multi-tiered automated test suite documentation (223 backend tests + 268 frontend tests = 491 total).
+- [`Deliverables/D3/Adversarial_Test_Report.md`](Deliverables/D3/Adversarial_Test_Report.md): 16-test adversarial safety suite and prompt injection audit (KAN-79).
 - [`Deliverables/D3/Defect_History.md`](Deliverables/D3/Defect_History.md): Register of 8 verified, resolved, and regression-tested defects (DEF-01 through DEF-08).
 - [`Deliverables/D3/Final_Traceability_Matrix.csv`](Deliverables/D3/Final_Traceability_Matrix.csv): End-to-end traceability matrix mapping all FRs, NFRs, and D3 items to source code, tests, and Git commits.
 - [`Deliverables/D3/Concurrency_Report.md`](Deliverables/D3/Concurrency_Report.md): 10-client parallel race verification proving zero double-booking under concurrency.
