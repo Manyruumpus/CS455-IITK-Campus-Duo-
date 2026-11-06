@@ -1,9 +1,0 @@
-{
-  "name": "booking-first",
-  "startedUtc": "2026-11-06T06:39:20.6076567+00:00",
-  "completedUtc": "2026-11-06T06:39:20.6992139+00:00",
-  "elapsedMilliseconds": 88.4831,
-  "status": 201,
-  "body": "{\"data\":{\"bookingId\":\"7008a06d-87a0-416d-9496-e76e44f22d77\",\"bookerId\":\"00000000-0000-0000-0000-00000000d501\",\"clientOperationId\":\"recovery-KAN-86-recovery-20261106-120917-758\",\"participants\":[{\"userId\":\"00000000-0000-0000-0000-00000000d501\",\"displayName\":\"Dev Student Alex\",\"role\":\"CREATOR\"},{\"userId\":\"00000000-0000-0000-0000-00000000d502\",\"displayName\":\"Dev Student Sam\",\"role\":\"COMPANION\"}],\"tableId\":\"00000000-0000-0000-0000-00000000d572\",\"tableNumber\":\"DB05-A\",\"locationId\":\"00000000-0000-0000-0000-00000000d571\",\"locationName\":\"[SYNTHETIC DEV SEED] Campus Duo Test Library\",\"localDate\":\"2026-12-06\",\"slotId\":\"00000000-0000-0000-0000-00000000d575\",\"status\":\"CONFIRMED\",\"partnerApprovalStatus\":\"NOT_REQUIRED\",\"bookingVersion\":1,\"createdAt\":\"2026-11-06T06:39:20.641Z\"},\"operationId\":\"recovery-KAN-86-recovery-20261106-120917-758\",\"requestId\":\"req-fa097ea5-fcd0-480f-b7ac-a00137129979\"}",
-  "error": null
-}

@@ -1,8 +1,0 @@
-{
-  "bookingCount": 1,
-  "participantCount": 2,
-  "idempotencyCount": 1,
-  "auditCount": 1,
-  "auditSuccessCount": 1,
-  "outboxCount": 1
-}

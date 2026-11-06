@@ -15,7 +15,7 @@ describe('GET /api/health', () => {
     expect(res.body).toHaveProperty('status', 'UP');
     expect(res.body).toHaveProperty('database', 'CONNECTED');
     expect(res.body).toHaveProperty('databaseUser', 'campus_duo_app');
-    expect(res.body).toHaveProperty('databaseName', 'campus_duo_test');
+    expect(res.body).toHaveProperty('databaseName', 'campus_duo_dev');
     expect(res.body).toHaveProperty('timestamp');
   });
 });

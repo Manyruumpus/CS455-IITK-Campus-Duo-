@@ -7,7 +7,6 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 export interface EnvConfig {
   nodeEnv: string;
   port: number;
-  host: string;
   allowTestHarnessAuth: boolean;
   db: {
     host: string;
@@ -22,10 +21,9 @@ export interface EnvConfig {
 export function getEnvConfig(): EnvConfig {
   const nodeEnv = process.env.NODE_ENV || 'development';
   const port = parseInt(process.env.PORT || '4000', 10);
-  const host = process.env.HOST || '127.0.0.1';
   const allowTestHarnessAuth = process.env.ALLOW_TEST_HARNESS_AUTH === 'true';
 
-  const dbHost = process.env.PGHOST || process.env.DB_HOST || '127.0.0.1';
+  const host = process.env.PGHOST || process.env.DB_HOST || '127.0.0.1';
   const dbPort = parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10);
   const database = process.env.PGDATABASE || process.env.DB_NAME || 'campus_duo_dev';
   const user = process.env.PGUSER || process.env.DB_USER || 'campus_duo_app';
@@ -35,10 +33,9 @@ export function getEnvConfig(): EnvConfig {
   return {
     nodeEnv,
     port,
-    host,
     allowTestHarnessAuth,
     db: {
-      host: dbHost,
+      host,
       port: dbPort,
       database,
       user,

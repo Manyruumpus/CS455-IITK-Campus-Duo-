@@ -1,8 +1,0 @@
-RunId=KAN-86-recovery-20261106-120934-727
-DataDir=C:\Users\mohit\.copilot\session-state\ed5aa75b-c756-46f5-987b-ea32cd764b28\files\pg-recovery-20261106
-Cluster=127.0.0.1:55432/campus_duo_dev
-SharedPortNeverInterrupted=127.0.0.1:5432
-pg_ctl status -D "C:\Users\mohit\.copilot\session-state\ed5aa75b-c756-46f5-987b-ea32cd764b28\files\pg-recovery-20261106"
-pg_ctl start -D "C:\Users\mohit\.copilot\session-state\ed5aa75b-c756-46f5-987b-ea32cd764b28\files\pg-recovery-20261106" -o "-p 55432 -h 127.0.0.1" -l "C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\required docs\deliverable-3\evidence\recovery\KAN-86-recovery-20261106-120934-727\postgres-ctl.log" -w
-pg_ctl stop -D "C:\Users\mohit\.copilot\session-state\ed5aa75b-c756-46f5-987b-ea32cd764b28\files\pg-recovery-20261106" -m immediate -w
-pg_ctl start -D "C:\Users\mohit\.copilot\session-state\ed5aa75b-c756-46f5-987b-ea32cd764b28\files\pg-recovery-20261106" -o "-p 55432 -h 127.0.0.1" -l "C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\required docs\deliverable-3\evidence\recovery\KAN-86-recovery-20261106-120934-727\postgres-ctl.log" -w
