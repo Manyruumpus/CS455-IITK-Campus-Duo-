@@ -9,6 +9,13 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup.ts'],
     include: ['src/tests/**/*.test.{ts,tsx}'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      ...(process.env.RUN_LIVE_TESTS === 'true'
+        ? []
+        : ['src/tests/httpBookingLive.integration.test.ts']),
+    ],
   },
   resolve: {
     preserveSymlinks: true,

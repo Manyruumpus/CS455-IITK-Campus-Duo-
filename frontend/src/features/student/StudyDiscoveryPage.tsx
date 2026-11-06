@@ -367,11 +367,11 @@ export const StudyDiscoveryPage: React.FC = () => {
 
                     <div className="flex flex-col items-end gap-1">
                       <Badge variant="ember" dot>
-                        {aiMatchScore}% Match (Demo)
+                        {aiMatchScore}% Match
                       </Badge>
                       {isNearTied && (
                         <Badge variant="mono" className="text-[10px]">
-                          Near-Tied Demo Score
+                          Near-Tied Compatibility
                         </Badge>
                       )}
                       {isLowCompleteness && (
@@ -403,6 +403,11 @@ export const StudyDiscoveryPage: React.FC = () => {
                           <span>{reason}</span>
                         </p>
                       ))}
+                      {rec.compatibilityBreakdown?.omittedFactors && rec.compatibilityBreakdown.omittedFactors.length > 0 && (
+                        <p className="text-[10px] text-amber-400/90 pt-1 border-t border-craft-border/60">
+                          Omitted factors (missing data): {rec.compatibilityBreakdown.omittedFactors.join(', ')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </CardContent>

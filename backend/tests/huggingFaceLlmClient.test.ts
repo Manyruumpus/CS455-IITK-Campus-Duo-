@@ -12,7 +12,7 @@ import { LlmExplanationRequest } from '../src/services/agentService';
 
 const SENTINEL_TOKEN = 'hf_test_token_must_never_leak';
 const request: LlmExplanationRequest = {
-  userPrompt: 'ignored student supplied content',
+  userPrompt: 'Need peer for quiet afternoon study',
   candidates: [
     {
       userId: 'private-candidate-id',
@@ -130,9 +130,9 @@ describe('HuggingFaceLlmClient', () => {
     expect(payload.messages[0].role).toBe('system');
     expect(payload.messages[1].content).toContain('candidate_1');
     expect(payload.messages[1].content).toContain('Overlapping study availability');
+    expect(payload.messages[1].content).toContain('Need peer for quiet afternoon study');
     expect(JSON.stringify(payload)).not.toContain('private-candidate-id');
     expect(JSON.stringify(payload)).not.toContain('Private Candidate Name');
-    expect(JSON.stringify(payload)).not.toContain('ignored student supplied content');
   });
 
   it.each([401, 402, 404, 429, 500, 503])(
@@ -243,5 +243,70 @@ describe('HuggingFaceLlmClient', () => {
     await expect(client.generateExplanations(request)).rejects.toThrow(
       'Hugging Face inference request failed.'
     );
+  });
+
+  it('returns an empty array immediately when candidates list is empty', async () => {
+    const fetchMock = vi.fn() as unknown as typeof fetch;
+    const client = new HuggingFaceLlmClient(
+      SENTINEL_TOKEN,
+      DEFAULT_HF_MODEL_ID,
+      5000,
+      fetchMock
+    );
+
+    const result = await client.generateExplanations({
+      userPrompt: 'irrelevant prompt',
+      candidates: [],
+    });
+
+    expect(result).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('successfully parses markdown code-fenced JSON responses from the provider', async () => {
+    const markdownContent = '```json\n[{"candidateId":"candidate_1","explanation":"Matches study pace and shared courses."}]\n```';
+    const fetchMock = vi.fn().mockResolvedValue(completion(markdownContent)) as unknown as typeof fetch;
+    const client = new HuggingFaceLlmClient(
+      SENTINEL_TOKEN,
+      DEFAULT_HF_MODEL_ID,
+      5000,
+      fetchMock
+    );
+
+    const result = await client.generateExplanations(request);
+    expect(result).toEqual([
+      {
+        userId: 'private-candidate-id',
+        explanation: 'Matches study pace and shared courses.',
+      },
+    ]);
+  });
+
+  it('omits userPrompt from message payload when userPrompt is undefined or whitespace', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      completion(
+        JSON.stringify([
+          {
+            candidateId: 'candidate_1',
+            explanation: 'Grounded match.',
+          },
+        ])
+      )
+    ) as unknown as typeof fetch;
+    const client = new HuggingFaceLlmClient(
+      SENTINEL_TOKEN,
+      DEFAULT_HF_MODEL_ID,
+      5000,
+      fetchMock
+    );
+
+    await client.generateExplanations({
+      userPrompt: '   ',
+      candidates: request.candidates,
+    });
+
+    const [, init] = (fetchMock as any).mock.calls[0];
+    const payload = JSON.parse(init.body);
+    expect(payload.messages[1].content).not.toContain('userPrompt');
   });
 });

@@ -42,6 +42,12 @@ export class HuggingFaceLlmClient implements ILlmClient {
       score: candidate.score,
       groundedFacts: candidate.groundedFacts,
     }));
+    const userMessageContent = req.userPrompt?.trim()
+      ? JSON.stringify({
+          userPrompt: req.userPrompt.trim(),
+          candidates: candidateLabels,
+        })
+      : JSON.stringify(candidateLabels);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -58,11 +64,11 @@ export class HuggingFaceLlmClient implements ILlmClient {
             {
               role: 'system',
               content:
-                'Write one brief explanation per candidate using only the supplied score and grounded facts. Return only a JSON array of objects with candidateId and explanation fields. Do not infer eligibility or take actions.',
+                'Write one brief explanation per candidate using only the supplied score and grounded facts. If a userPrompt is provided, focus on relevant grounded facts that match it. Return only a JSON array of objects with candidateId and explanation fields. Do not infer eligibility or take actions.',
             },
             {
               role: 'user',
-              content: JSON.stringify(candidateLabels),
+              content: userMessageContent,
             },
           ],
           temperature: 0.2,
@@ -77,9 +83,15 @@ export class HuggingFaceLlmClient implements ILlmClient {
       }
 
       const body = (await response.json()) as HuggingFaceChatCompletionResponse;
-      const content = body.choices?.[0]?.message?.content;
-      if (typeof content !== 'string' || !content.trim()) {
+      const rawContent = body.choices?.[0]?.message?.content;
+      if (typeof rawContent !== 'string' || !rawContent.trim()) {
         throw new Error('Hugging Face inference returned no content.');
+      }
+
+      let content = rawContent.trim();
+      const codeBlockMatch = /^```(?:json)?\s*([\s\S]*?)\s*```$/i.exec(content);
+      if (codeBlockMatch) {
+        content = codeBlockMatch[1].trim();
       }
 
       const parsed: unknown = JSON.parse(content);

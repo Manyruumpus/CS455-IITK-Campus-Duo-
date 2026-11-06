@@ -1,178 +1,210 @@
 # Campus Duo
 
 > **CS455 — Software Engineering Course Project**  
-> **Deliverable 0: Project Proposal**
+> **Final Deliverable Package (Deliverable 2 & Deliverable 3)**  
+> **Indian Institute of Technology Kanpur (IITK)**
 
-Campus Duo is an IIT Kanpur platform for verified students to discover compatible study partners and book capacity-limited study spaces or study-session slots after a mutual study match. It combines deterministic, explainable matching with a governed Agentic AI assistant. The project emphasizes correct transactions, privacy, safety, concurrency, testing, security, observability, and traceable software engineering practice.
+Campus Duo is an institutional platform designed for verified IIT Kanpur students to discover compatible study partners and reserve capacity-limited study spaces upon mutual study consent. It integrates deterministic, explainable compatibility matching with a strictly governed Agentic AI assistant (`qwen2.5vl:3b` via local Ollama or hosted Hugging Face router, with deterministic offline fallback).
 
-## Project Links
+The project is built around software engineering rigor: atomic PostgreSQL transactions, strict participant authorization, robust concurrency handling (guaranteeing zero double-bookings), rigorous PII redaction, full profile persistence, and 100% passing automated test coverage across 491 tests.
 
-- **Jira:** [Campus Duo Jira Board](https://mohitpariharsworkspace-43776135.atlassian.net/?continue=https%3A%2F%2Fmohitpariharsworkspace-43776135.atlassian.net%2Fwelcome%2Fsoftware%3FprojectId%3D10000&atlOrigin=eyJpIjoiN2VmYmNkODIwNTdhNDFmYzkyYjgxYzFhMzFkNDVhZGIiLCJwIjoiamlyYS1zb2Z0d2FyZSJ9)
-- **Repository:** [CS455-IITK-Campus-Duo](https://github.com/Manyruumpus/CS455-IITK-Campus-Duo-)
-- **Proposal:** [`Deliverables/Deliverable_0_Project_Proposal_Campus_Duo.md`](Deliverables/Deliverable_0_Project_Proposal_Campus_Duo.md)
+---
 
-> **Access requirement:** The instructor and assigned TAs must be invited to both the Jira project and this GitHub repository with appropriate access. Every team member must contribute from their own GitHub account.
+## Deliverables & Traceability Index
 
-## Problem
+All project deliverables and engineering evidence are organized under the repository root and `Deliverables/` directory:
 
-Students often struggle to identify peers studying the same course, sharing compatible availability, or wanting similar forms of collaboration such as revision, project work, competitive-programming practice, or assignment solving. Informal groups are noisy and do not provide privacy controls, compatibility ranking, or reliable session planning.
+### Deliverable 1 (D1)
+- [`Deliverables/Deliverable_0_Project_Proposal_Campus_Duo.md`](Deliverables/Deliverable_0_Project_Proposal_Campus_Duo.md): Initial project proposal and system scope.
+- [`Deliverables/D1/`](Deliverables/D1/): SRS, architecture, baseline requirements, and project charter.
 
-Campus Duo provides a verified, consent-first system for discovering compatible study partners and safely planning a study session in a capacity-limited space.
+### Deliverable 2 (D2)
+- [`Deliverables/D2/Agentic_AI_Integration_Report.md`](Deliverables/D2/Agentic_AI_Integration_Report.md): Bounded Agentic AI architecture, prompt propagation, local Ollama integration, grounding validation, and zero-mutation proof.
+- [`Deliverables/D2/AI_Engineering_Log.md`](Deliverables/D2/AI_Engineering_Log.md): Complete engineering log entries (AIL-001 through AIL-009) detailing LLM interactions, human critiques, and prompt refinements.
+- [`Deliverables/D2/API_Documentation.md`](Deliverables/D2/API_Documentation.md): Comprehensive OpenAPI-compliant specifications for Auth, Profile, Discovery, Booking, Admin, and Agent endpoints.
+- [`Deliverables/D2/D2_Implementation_Summary.md`](Deliverables/D2/D2_Implementation_Summary.md): Architecture walkthrough of the core vertical slice.
+- [`Deliverables/D2/Transactional_Demo_Guide.md`](Deliverables/D2/Transactional_Demo_Guide.md): Step-by-step verification guide for live demo flows.
+- [`Deliverables/D2/Requirements_Traceability_D2.csv`](Deliverables/D2/Requirements_Traceability_D2.csv): D2 functional requirement mappings.
 
-## Core Features
+### Deliverable 3 (D3)
+- [`Deliverables/D3/D3_Final_Project_Report.md`](Deliverables/D3/D3_Final_Project_Report.md): Executive summary, architectural review, and project post-mortem.
+- [`Deliverables/D3/AI_Engineering_Log.md`](Deliverables/D3/AI_Engineering_Log.md): Consolidated AI engineering audit trail.
+- [`Deliverables/D3/Testing_Report.md`](Deliverables/D3/Testing_Report.md): Multi-tiered automated test suite documentation (223 backend tests + 268 frontend tests = 491 total).
+- [`Deliverables/D3/Defect_History.md`](Deliverables/D3/Defect_History.md): Register of 8 verified, resolved, and regression-tested defects (DEF-01 through DEF-08).
+- [`Deliverables/D3/Final_Traceability_Matrix.csv`](Deliverables/D3/Final_Traceability_Matrix.csv): End-to-end traceability matrix mapping all FRs, NFRs, and D3 items to source code, tests, and Git commits.
+- [`Deliverables/D3/Concurrency_Report.md`](Deliverables/D3/Concurrency_Report.md): 10-client parallel race verification proving zero double-booking under concurrency.
+- [`Deliverables/D3/Security_Threat_Model.md`](Deliverables/D3/Security_Threat_Model.md): STRIDE threat model, authorization boundaries, and PII protection mechanisms.
+- [`Deliverables/D3/Failure_Recovery_Report.md`](Deliverables/D3/Failure_Recovery_Report.md): 12-scenario fault injection and transaction rollback verification.
+- [`Deliverables/D3/Performance_Report.md`](Deliverables/D3/Performance_Report.md): High-resolution loopback latency profiling for API routes.
+- [`Deliverables/D3/Costing_Document.md`](Deliverables/D3/Costing_Document.md): 3-tier financial model (MVP, Scale, Enterprise) for cloud compute, DB, and LLM hosting.
+- [`Deliverables/D3/Deployment_Guide.md`](Deliverables/D3/Deployment_Guide.md): Docker containerization, systemd services, and PostgreSQL production deployment runbook.
+- [`Deliverables/D3/Project_Gantt.csv`](Deliverables/D3/Project_Gantt.csv) & [`Deliverables/D3/Jira_Project_Evidence.md`](Deliverables/D3/Jira_Project_Evidence.md): Commit-anchored timeline and Jira governance reconciliation.
+- [`Deliverables/D3/Submission_Checklist.md`](Deliverables/D3/Submission_Checklist.md): Final verification checklist for D3 compliance.
 
-- IITK email verification and secure authentication
-- Student profile, discovery consent, and privacy settings
-- Study preferences: courses, topics, availability, goals, study style, interests, and locations
-- Deterministic compatibility filtering and ranking
-- Like, Pass, Save, Block, and Report actions
-- Mutual-match-only chat for study partners
-- Capacity-aware study-space/session booking
-- Booking creation, rescheduling, and cancellation
-- Separate Student and Administrator dashboards
-- Controlled Agentic AI recommendations and explanations
-- Transaction, moderation, booking, and agent audit logs
+---
 
-## Roles
+## System Architecture
 
-| Role | Primary responsibilities |
-|---|---|
-| **Student** | Manages profile/privacy settings, obtains recommendations, connects through mutual Likes, uses mutual-match chat, and creates/reschedules/cancels bookings |
-| **Administrator** | Manages study spaces and capacities, reviews reports, suspends/removes accounts if necessary, and reviews booking, moderation, and agent audit logs |
+Campus Duo implements a clean three-tier architecture:
 
-## Transaction and Concurrency
-
-A mutually matched pair can book a limited-capacity study-space time slot. A booking is a stateful transaction:
-
-```text
-Create booking     → consumes one capacity unit
-Reschedule booking → releases old capacity and consumes new capacity atomically
-Cancel booking     → releases capacity and records an audit event
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       React Frontend                        │
+│   (Vite + React Router + Tailwind CSS + Lucide Icons)      │
+│  - ProfilePage (Course selection, study style, availability)│
+│  - StudyDiscoveryPage (Deterministic ranking, match tags)   │
+│  - BookingCalendar & SpaceViewer (Capacity-aware reserving) │
+│  - StudentDashboard & AdminDashboard                        │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP / JSON API
+┌──────────────────────────────▼──────────────────────────────┐
+│                    Express.js Backend                       │
+│  - Auth & RBAC Middleware (@iitk.ac.in OTP verification)    │
+│  - Profile Router & Service (PostgreSQL-backed persistence)  │
+│  - Scoring Engine (35% Course, 25% Time, 20% Style, etc.)   │
+│  - Booking Service (Atomic reservation & capacity tracking) │
+│  - Governed Agent Service (Read-only, identity redaction)   │
+└──────────────┬──────────────────────────────┬───────────────┘
+               │                              │
+┌──────────────▼──────────────┐┌──────────────▼───────────────┐
+│     PostgreSQL Database     ││   AI Recommendation Engine   │
+│ - campus_duo schema         ││ - Local Ollama (qwen2.5vl:3b)│
+│ - Strict role isolation     ││ - Hugging Face Router API    │
+│ - Partial unique indices    ││ - Offline Template Fallback  │
+│ - Transactional integrity   ││ - Grounding & PII Redaction  │
+└─────────────────────────────┘└──────────────────────────────┘
 ```
 
-The central correctness requirement is that a single capacity unit can never be allocated twice. When multiple users attempt to reserve the last seat concurrently, the system will use server-side validation, an atomic conditional database update/transaction, and active-booking uniqueness constraints so that only the permitted number of requests succeeds.
+---
 
-## Compatibility Ranking
+## Core Implemented Capabilities
 
-For Study Mode, Campus Duo will initially use the following deterministic score:
+1. **Email OTP Authentication & Authoritative RBAC:**
+   - Restricted strictly to verified `@iitk.ac.in` email identities.
+   - 6-digit challenge dispatch with 60-second cooldown and 3-attempt lockout.
+   - Dual-role authorization: Student and Administrator contexts.
 
-\[
-S(u,v)=0.35C+0.25T+0.15G+0.10I+0.10L+0.05P
-\]
+2. **Persistent Student Profiles & Catalog Normalization:**
+   - Endpoints: `GET /api/profile/me`, `PUT /api/profile/me`.
+   - Persists Study Style (`SOLO`, `DISCUSSION_HEAVY`, `QUIET_COWORKING`, `PEER_TEACHING`), Preferred Times (`MORNING`, `AFTERNOON`, `EVENING`, `LATE_NIGHT`), Preferred Locations, Goals, and Enrolled Courses.
+   - Transparently normalizes course codes (handling both raw `CS455` and catalog-prefixed `DB05-CS455`).
+   - Atomic sync with `campus_duo.profile_course` and `consent_record`.
 
-| Symbol | Meaning |
-|---|---|
-| \(C\) | Course overlap |
-| \(T\) | Availability overlap |
-| \(G\) | Study-goal compatibility |
-| \(I\) | Interest overlap |
-| \(L\) | Preferred-location overlap |
-| \(P\) | Study-style compatibility |
+3. **Deterministic Compatibility Scoring & Discovery:**
+   - Compatibility score formula:
+     $$S(u,v) = 0.35C + 0.25T + 0.20P + 0.10L + 0.10G$$
+     *(Course, Availability, Study Style, Location, Goals).*
+   - Strict eligibility filtering: excludes self, unconsented profiles, blocked pairs, or non-overlapping study modes.
+   - Ties broken deterministically by enrollment count and user UUID order.
 
-Eligibility filtering removes the requesting user, unverified profiles, users outside the relevant mode, blocked users, users who opted out of discovery, and profiles that violate privacy or pass rules.
+4. **Capacity-Aware Atomic Study Space Reservation:**
+   - Atomic conditional transactions enforce exact capacity limits at the database engine level.
+   - Rescheduling atomically releases existing seat and claims target seat in a single SQL transaction.
+   - Concurrency race verified: 10 simultaneous threads competing for the last seat results in exactly 1 success (201) and 9 conflicts (409), with zero overbooking.
 
-## Agentic AI
+5. **Bounded Agentic AI Study Assistant:**
+   - Endpoint: `POST /api/agent/recommend`.
+   - Read-only invariant (Invariant I5): Agent cannot mutate database rows, book slots, modify profiles, or send unapproved messages.
+   - Structured JSON response with candidate explanations, compatible times, and match justifications.
+   - Multi-provider flexibility:
+     - **Local Ollama Inference (`LLM_PROVIDER=ollama`):** Evaluated locally using `qwen2.5vl:3b` (~4.2s latency on NVIDIA RTX 3050 Laptop GPU, 4 GB VRAM).
+     - **Cloud Hugging Face Inference (`LLM_PROVIDER=huggingface`):** Uses Hugging Face router completions.
+     - **Deterministic Offline Fallback (`TemplateLlmClient`):** Immediately engages if LLM is unreachable or produces ungrounded claims, ensuring continuous system operation.
+   - Rigorous Grounding Validator: Rejects any LLM explanation containing hallucinated course names, times, or ungrounded claims.
 
-### Match Recommendation and Explainer Agent
+---
 
-The agent accepts a natural-language request such as:
+## Quickstart & Local Setup
 
-> “Find me a CS455 problem-solving partner this weekend.”
+### 1. Prerequisites
+- **Node.js**: v20.x or higher
+- **PostgreSQL**: v16.x or higher
+- **Ollama** (optional, for local LLM inference): with `qwen2.5vl:3b` model installed
 
-It extracts permitted structured filters, calls restricted backend tools, presents ranked candidates, and generates a concise explanation supported by the deterministic matching result.
+### 2. Database Initialization
+Ensure PostgreSQL is running locally on port 5432, then apply migrations and baseline seeds:
+```powershell
+# Navigate to database directory
+cd database
 
-### Allowed tools
+# Apply schema migrations (as superuser / postgres)
+psql -U postgres -d postgres -f migrations/01_schema_init.sql
 
-```text
-searchEligibleProfiles(userId, mode, filters, limit)
-calculateCompatibility(userProfile, candidateProfiles, mode)
-getAllowedMatchReasons(userId, candidateId, compatibilityBreakdown)
-getAvailableStudySlots(matchedUserIds, preferredTime, preferredLocation)
+# Seed development catalog & test peers
+psql -U postgres -d campus_duo_dev -f seeds/02_development_seed.sql
 ```
 
-The agent does not directly query the database and receives only data allowed by authorization and privacy rules.
+### 3. Backend Configuration & Startup
+```powershell
+cd backend
+npm install
 
-### Action boundaries
+# Configure backend/.env
+# PORT=4000
+# DATABASE_URL=postgresql://campus_duo_app:campus_duo_dev_pwd@localhost:5432/campus_duo_dev
+# LLM_PROVIDER=ollama
+# OLLAMA_HOST=http://localhost:11434
+# OLLAMA_MODEL=qwen2.5vl:3b
 
-| Category | Agent actions |
-|---|---|
-| **Autonomous** | Parse request, retrieve authorized candidates, obtain deterministic scores, explain approved matching evidence, recommend available slots |
-| **User approval required** | Like a user, send a message, create/reschedule/cancel a booking, submit a report |
-| **Prohibited** | Access hidden profiles, private chats, exact schedules, contact details, credentials, sensitive attributes, or take moderation actions |
-
-The system will validate tool arguments and agent outputs, audit important agent decisions/tool calls, prevent unsupported explanations, and provide a safe fallback when the LLM provider is unavailable.
-
-## Planned Stack
-
-| Layer | Planned technology |
-|---|---|
-| Frontend | React, React Router, Tailwind CSS |
-| Backend | Node.js, Express.js, Socket.io |
-| Database | MongoDB with atomic operations/transactions for capacity handling |
-| Authentication | IITK email verification, secure sessions/JWT, RBAC |
-| AI | API-based LLM with a Node.js orchestration service and allow-listed tools |
-| Testing | Jest, React Testing Library, Supertest/Postman, concurrency/load tests |
-| Delivery | GitHub, Jira, pull requests, peer review, CI, cloud deployment |
-
-## Engineering Workflow
-
-Jira is the system of record for requirements, user stories, tasks, estimates, sprints, bugs, priorities, and progress. GitHub is the system of record for code and reviewed implementation. Significant work must preserve the following traceability:
-
-```text
-Requirement → User Story → Jira Issue → GitHub Branch → Commit(s) → Pull Request → Test Case → Test Result
+# Start backend dev server
+npm run dev
 ```
 
-### Branch and pull-request convention
+### 4. Local Ollama AI Setup
+To run local LLM inference:
+```powershell
+# Pull and test the Qwen model
+ollama pull qwen2.5vl:3b
+ollama run qwen2.5vl:3b
 
-```text
-Branch:  feature/CD-123-capacity-aware-booking
-Commit:  CD-123 enforce atomic capacity allocation
-PR:      CD-123: Add capacity-aware booking transaction
+# Check endpoint availability
+curl http://localhost:11434/api/tags
 ```
 
-Every significant pull request should reference its Jira issue, describe the implementation and tests performed, and receive review from at least one other team member before merging.
+### 5. Frontend Startup
+```powershell
+cd frontend
+npm install
 
-## Project Status
+# Start Vite development server
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-**Current phase:** Deliverable 2 — Working Code, Transactional Demo, Bounded Agent Workflow, and Traceability (15 October 2026).
+---
 
-Deliverable 2 delivers the core vertical slice of Campus Duo:
-- **Backend Service (`backend/`):** PostgreSQL-backed Express booking service (`campus_duo_app` role), availability queries, transactional booking creation with partial unique index protection, participant-authorized booking detail/history retrieval, and 10-client concurrency race verification (49 tests passing).
-- **Frontend Live Adapter (`frontend/src/services/http/HttpBookingAdapter.ts`):** Complete live HTTP adapter connecting React UI to the Express backend when `VITE_USE_LIVE_BOOKING=true` (217 tests passing).
-- **Bounded AI Recommendation Agent (`POST /api/agent/recommend`):** Grounded study partner match explainer implementing formula `35C + 25T + 20P + 10L + 10G`, allowlisted read-only tools, zero mutation invariant, and deterministic offline template fallback.
-- **Documentation & Evidence:**
-  - [Deliverable 2 Demonstration Runbook](docs/D2-runbook.md)
-  - [Deliverable 2 Test Evolution Log](docs/test_evolution.md)
-  - [Requirements Traceability Matrix](required%20docs/03-initial-traceability-matrix.md)
-  - [AI Engineering Log](required%20docs/05-ai-engineering-log.md)
+## Automated Verification & Test Suites
 
-## Planned Repository Layout
+The project includes 491 automated tests across 46 test suites, achieving 100% pass rate:
 
-```text
-.
-├── Deliverables/
-│   └── Deliverable_0_Project_Proposal_Campus_Duo.md
-├── docs/
-│   ├── architecture/
-│   ├── requirements/
-│   ├── testing/
-│   └── ai-engineering-log/
-├── frontend/
-├── backend/
-├── tests/
-└── README.md
+### Backend Test Execution (Vitest)
+```powershell
+cd backend
+
+# Run all backend test suites
+npx vitest run
+
+# Run specific integration suites
+npx vitest run tests/profile.lifecycle.test.ts tests/scoringEngine.test.ts tests/ollamaLlmClient.test.ts
+npx vitest run tests/concurrency.race.test.ts tests/agent.safety.test.ts
 ```
 
-## Initial Risks
+### Frontend Test Execution (Vitest)
+```powershell
+cd frontend
 
-| Risk | Initial mitigation |
-|---|---|
-| Race conditions and overbooking | Atomic updates/transactions, constraints, and reproducible concurrency testing |
-| Harassment or privacy abuse | Verification, consent and visibility controls, mutual-match chat, block/report workflow, administrator review |
-| LLM hallucinations or data leakage | Deterministic ranking, approved evidence only, output validation, restricted tools, audit logging |
-| LLM/API failure | Timeouts, error handling, and deterministic non-AI fallback |
-| Scope expansion | MVP-first delivery: profiles, matching, booking, admin controls, governed AI, and testing |
+# Run all frontend unit and component tests
+npm test
 
-## License
+# Run profile and auth persistence tests
+npx vitest run src/tests/profileServiceSelection.test.ts src/tests/auth.persistence.test.tsx
+```
 
-This repository is maintained for the CS455 course project. Licensing and reuse terms will be finalized by the project team.
+---
+
+## Engineering Team & Jira Governance
+
+- **Repository:** [https://github.com/Manyruumpus/CS455-IITK-Campus-Duo-](https://github.com/Manyruumpus/CS455-IITK-Campus-Duo-)
+- **Jira Board:** [Campus Duo Jira Workspace](https://mohitpariharsworkspace-43776135.atlassian.net/)
+- **Target Branches:** `feat/KAN-49-d2-integration` → `main`
+- **Course:** CS455 Software Engineering, Department of Computer Science & Engineering, IIT Kanpur.

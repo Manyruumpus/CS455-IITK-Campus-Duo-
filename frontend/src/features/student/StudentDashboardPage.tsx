@@ -114,7 +114,7 @@ export const StudentDashboardPage: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-1.5 mt-2">
               {enrolledCourses.map((c) => (
-                <Badge key={c.code} variant="mono">{c.code}</Badge>
+                <Badge key={c.code} variant="mono">{c.code.replace(/^DB05-/i, '')}</Badge>
               ))}
             </div>
             <p className="text-[11px] text-craft-muted mt-3">

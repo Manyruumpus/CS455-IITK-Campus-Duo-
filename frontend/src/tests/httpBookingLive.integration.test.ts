@@ -5,14 +5,26 @@ import { HttpBookingAdapter } from '@/services/http/HttpBookingAdapter';
 import { ServiceContext } from '@/services/interfaces';
 import { ErrorCode, UserSession } from '@/types';
 
+declare const process: any;
+
 function cleanupLiveTestData() {
   try {
     execSync(
-      `node -e "const { cleanupTestData, closeMigratorPool } = require('../backend/dist/tests/testDbHelper'); cleanupTestData(['frontend-live-op-%', 'frontend-concurrency-race-%']).then(() => closeMigratorPool()).catch(() => {})"`,
-      { stdio: 'ignore' }
+      `node -e "(async () => { const { cleanupTestData, closeMigratorPool } = require('../backend/dist/tests/testDbHelper'); await cleanupTestData(['frontend-live-op-%', 'frontend-conflict-op-%', 'frontend-concurrency-race-%']); await closeMigratorPool(); })().catch(err => { console.error('Cleanup failed:', err); process.exit(1); })"`,
+      {
+        stdio: 'pipe',
+        env: {
+          ...process.env,
+          CAMPUS_DUO_TEST_MODE: 'true',
+          PGDATABASE: 'campus_duo_test',
+        },
+      }
     );
-  } catch {
-    // ignore
+  } catch (err: any) {
+    const stderr = err?.stderr ? String(err.stderr) : '';
+    const stdout = err?.stdout ? String(err.stdout) : '';
+    const details = [stderr, stdout, err?.message].filter(Boolean).join('\n');
+    throw new Error(`Live test cleanup failed against campus_duo_test: ${details}`);
   }
 }
 
@@ -37,44 +49,59 @@ const context = (session: UserSession): ServiceContext => ({
   actorSession: session,
 });
 
-describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => {
+const isLiveEnabled = process.env.RUN_LIVE_TESTS === 'true';
+
+describe.skipIf(!isLiveEnabled)('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => {
   let isBackendLive = false;
   let adapter: HttpBookingAdapter;
 
   beforeAll(async () => {
-    cleanupLiveTestData();
-
     adapter = new HttpBookingAdapter({
       baseUrl: 'http://localhost:4000',
     });
 
     try {
       const res = await fetch('http://localhost:4000/api/health');
-      if (res.ok) {
-        const body = (await res.json()) as { status: string; database: string };
-        isBackendLive = body.status === 'UP' && body.database === 'CONNECTED';
+      if (!res.ok) {
+        throw new Error(`Target backend health check failed with status ${res.status}. Expected active test backend.`);
       }
-    } catch {
+
+      const body = (await res.json()) as {
+        status?: string;
+        database?: string;
+        databaseName?: string;
+      };
+
+      if (body.status !== 'UP' || body.database !== 'CONNECTED') {
+        throw new Error(`Target backend is not ready: status=${body.status}, database=${body.database}`);
+      }
+
+      if (body.databaseName !== 'campus_duo_test') {
+        throw new Error(
+          `Target backend database mismatch: expected "campus_duo_test", got "${body.databaseName}". Failing closed to protect non-test databases.`
+        );
+      }
+
+      isBackendLive = true;
+      cleanupLiveTestData();
+    } catch (err) {
       isBackendLive = false;
+      throw err;
     }
   });
 
   afterAll(() => {
-    cleanupLiveTestData();
+    if (isBackendLive) {
+      cleanupLiveTestData();
+    }
   });
 
   it('verifies backend health and PostgreSQL connection status', () => {
-    if (!isBackendLive) {
-      console.log('NOTICE: Backend server not running on http://localhost:4000. Live PostgreSQL verification skipped (run backend dev server to execute).');
-      return;
-    }
     expect(isBackendLive).toBe(true);
   });
 
   describe('Live Availability & PostgreSQL Booking Creation', () => {
     it('queries live locations from PostgreSQL through HttpBookingAdapter', async () => {
-      if (!isBackendLive) return;
-
       const locations = await adapter.listLocations(context(ALEX_SESSION));
 
       expect(Array.isArray(locations)).toBe(true);
@@ -91,8 +118,6 @@ describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => 
     });
 
     it('queries live table availability from PostgreSQL through HttpBookingAdapter', async () => {
-      if (!isBackendLive) return;
-
       const slots = await adapter.listTableAvailability(LOCATION_ID, TEST_DATE_1, context(ALEX_SESSION));
 
       expect(Array.isArray(slots)).toBe(true);
@@ -106,8 +131,6 @@ describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => 
     });
 
     it('creates a confirmed booking and verifies live PostgreSQL persistence', async () => {
-      if (!isBackendLive) return;
-
       // Dynamically select an available slot
       const initialSlots = await adapter.listTableAvailability(LOCATION_ID, TEST_DATE_1, context(ALEX_SESSION));
       const availableSlot = initialSlots.find((s) => s.status === 'AVAILABLE');
@@ -183,8 +206,6 @@ describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => 
 
   describe('Live PostgreSQL Concurrency Race Condition via HttpBookingAdapter', () => {
     it('executes 5 simultaneous booking attempts targeting the same slot: exactly 1 succeeds and 4 receive CONFLICT', async () => {
-      if (!isBackendLive) return;
-
       const initialSlots = await adapter.listTableAvailability(LOCATION_ID, CONTESTED_DATE, context(ALEX_SESSION));
       const availableSlot = initialSlots.find((s) => s.status === 'AVAILABLE');
       expect(availableSlot).toBeDefined();
@@ -243,8 +264,6 @@ describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => 
     });
 
     it('retrieves live booking detail and history via HttpBookingAdapter', async () => {
-      if (!isBackendLive) return;
-
       const seedBookingId = '00000000-0000-0000-0000-00000000d581';
 
       // 1. Retrieve booking using demo ID bk-1001 (mapped to seed UUID)
@@ -266,8 +285,6 @@ describe('Live PostgreSQL End-to-End Integration via HttpBookingAdapter', () => 
     });
 
     it('enforces booking retrieval authorization against live PostgreSQL (Jordan cannot view Alex/Sam booking)', async () => {
-      if (!isBackendLive) return;
-
       const JORDAN_SESSION: UserSession = {
         userId: '00000000-0000-0000-0000-00000000D503',
         email: 'jordan.taylor@campusduo.test',

@@ -8,6 +8,9 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
   const TEST_STUDENT_EMAIL = 'lifecycle.student@iitk.ac.in';
   const TEST_STUDENT_NAME = 'Lifecycle Test Student';
   const TEST_STUDENT_PASS = 'StudentSecret123!';
+  const TEST_COMPANION_EMAIL = 'lifecycle.companion@iitk.ac.in';
+  const TEST_COMPANION_NAME = 'Lifecycle Test Companion';
+  const TEST_COMPANION_PASS = 'CompanionSecret123!';
   const AUTH_TEST_SLOT_ID = '00000000-0000-0000-0000-00000000e060';
   const AUTH_TEST_DATE = '2026-11-27';
 
@@ -15,23 +18,15 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
     process.env.NODE_ENV = 'development';
     process.env.ALLOW_TEST_HARNESS_AUTH = 'true';
     await deleteTestUser(TEST_STUDENT_EMAIL);
+    await deleteTestUser(TEST_COMPANION_EMAIL);
     await deleteTestUser('attacker%');
     await deleteTestUser('dup%');
     await cleanupTestData(['test-auth-%', 'op-auth-%'], [AUTH_TEST_SLOT_ID]);
-
-    await setupTestSlot({
-      slotId: AUTH_TEST_SLOT_ID,
-      tableId: '00000000-0000-0000-0000-00000000d572',
-      locationId: '00000000-0000-0000-0000-00000000d571',
-      localDate: AUTH_TEST_DATE,
-      startTime: '14:00:00',
-      endTime: '16:00:00',
-      zone: 'COLLABORATIVE_STUDY',
-    });
   });
 
   afterEach(async () => {
     await deleteTestUser(TEST_STUDENT_EMAIL);
+    await deleteTestUser(TEST_COMPANION_EMAIL);
     await deleteTestUser('attacker%');
     await deleteTestUser('dup%');
     await cleanupTestData(['test-auth-%', 'op-auth-%'], [AUTH_TEST_SLOT_ID]);
@@ -320,6 +315,20 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
 
   describe('5. End-to-End Fresh Registered Student Booking Integration', () => {
     it('allows a newly registered student to authenticate via Bearer token, query slots, and reserve a study table', async () => {
+      // Explicitly provision the dedicated test slot for this integration scenario.
+      // Parent synthetic study_location and study_table fixtures are verified or created
+      // as durable, reusable fixtures in campus_duo_test, while AUTH_TEST_SLOT_ID and
+      // any resulting bookings are removed during afterEach teardown.
+      await setupTestSlot({
+        slotId: AUTH_TEST_SLOT_ID,
+        tableId: '00000000-0000-0000-0000-00000000d572',
+        locationId: '00000000-0000-0000-0000-00000000d571',
+        localDate: AUTH_TEST_DATE,
+        startTime: '14:00:00',
+        endTime: '16:00:00',
+        zone: 'COLLABORATIVE_STUDY',
+      });
+
       // 1. Register fresh student
       const regRes = await request(app)
         .post('/api/auth/register')
@@ -332,36 +341,48 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
       const studentToken = regRes.body.data.token;
       const studentId = regRes.body.data.user.userId;
 
-      // 2. Query locations with Bearer token
+      // 2. Register dedicated test companion student
+      // Registration via register_verified_student automatically provisions active STUDY consent
+      // for this test-owned companion account without modifying shared seed fixtures.
+      const compRes = await request(app)
+        .post('/api/auth/register')
+        .send({
+          email: TEST_COMPANION_EMAIL,
+          displayName: TEST_COMPANION_NAME,
+          password: TEST_COMPANION_PASS,
+        });
+      expect(compRes.status).toBe(201);
+      const companionToken = compRes.body.data.token;
+      const companionId = compRes.body.data.user.userId;
+
+      // 3. Query locations with Bearer token
       const locRes = await request(app)
         .get('/api/booking/locations')
         .set('Authorization', `Bearer ${studentToken}`);
       expect(locRes.status).toBe(200);
       expect(locRes.body.data.length).toBeGreaterThan(0);
 
-      // 3. Query availability with Bearer token
+      // 4. Query availability with Bearer token
       const availRes = await request(app)
         .get('/api/booking/availability?date=2026-11-14')
         .set('Authorization', `Bearer ${studentToken}`);
       expect(availRes.status).toBe(200);
 
-      // 4. Form mutual STUDY connection between fresh student and companion Sam via discovery API
-      const SAM_ID = '00000000-0000-0000-0000-00000000d502';
-
+      // 5. Form mutual STUDY connection between fresh student and dedicated companion via discovery API
       const likeRes1 = await request(app)
         .post('/api/discovery/actions')
         .set('Authorization', `Bearer ${studentToken}`)
-        .send({ targetStudentId: SAM_ID, mode: 'STUDY', action: 'LIKE' });
+        .send({ targetStudentId: companionId, mode: 'STUDY', action: 'LIKE' });
       expect(likeRes1.status).toBe(200);
 
       const likeRes2 = await request(app)
         .post('/api/discovery/actions')
-        .set('X-Campus-Duo-Test-Actor', SAM_ID)
+        .set('Authorization', `Bearer ${companionToken}`)
         .send({ targetStudentId: studentId, mode: 'STUDY', action: 'LIKE' });
       expect(likeRes2.status).toBe(200);
       expect(likeRes2.body.data.relationshipStatus).toBe('MUTUAL_CONNECTED');
 
-      // 5. Create booking with companion Sam
+      // 6. Create booking with companion
       const LOCATION_ID = '00000000-0000-0000-0000-00000000d571';
       const TABLE_ID = '00000000-0000-0000-0000-00000000d572';
       const CLIENT_OP_ID = 'op-auth-lifecycle-book-01';
@@ -375,7 +396,7 @@ describe('Auth Lifecycle & Authoritative RBAC Suite', () => {
           locationId: LOCATION_ID,
           localDate: AUTH_TEST_DATE,
           slotId: AUTH_TEST_SLOT_ID,
-          companionStudentId: SAM_ID,
+          companionStudentId: companionId,
         });
 
       expect(bookRes.status).toBe(201);

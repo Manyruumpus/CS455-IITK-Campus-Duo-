@@ -138,13 +138,28 @@ export class ScoringEngine {
     let styleNorm = 0.0;
 
     if (hasStyle) {
-      if (viewerStyle!.toUpperCase() === candidateStyle!.toUpperCase()) {
+      const vStyle = viewerStyle!.toUpperCase();
+      const cStyle = candidateStyle!.toUpperCase();
+      if (vStyle === cStyle) {
         styleNorm = 1.0;
         groundedFacts.push(
           `Identical study style: ${candidateStyle!.toLowerCase().replace(/_/g, ' ')}`
         );
+      } else if (vStyle === 'HYBRID' || cStyle === 'HYBRID') {
+        styleNorm = 0.8;
+        groundedFacts.push(
+          `Compatible study style: ${candidateStyle!.toLowerCase().replace(/_/g, ' ')}`
+        );
+      } else if (
+        (vStyle === 'QUIET_FOCUSED' && cStyle === 'DISCUSSION_HEAVY') ||
+        (vStyle === 'DISCUSSION_HEAVY' && cStyle === 'QUIET_FOCUSED')
+      ) {
+        styleNorm = 0.3; // Polarized styles
+        groundedFacts.push(
+          `Study style: ${candidateStyle!.toLowerCase().replace(/_/g, ' ')}`
+        );
       } else {
-        styleNorm = 0.3; // Adjacent/compatible style
+        styleNorm = 0.6; // Adjacent style (e.g. PROBLEM_SOLVING vs QUIET_FOCUSED)
         groundedFacts.push(
           `Study style: ${candidateStyle!.toLowerCase().replace(/_/g, ' ')}`
         );
@@ -201,15 +216,23 @@ export class ScoringEngine {
     if (hasGoals) {
       if (viewerGoals!.trim().toLowerCase() === candidateGoals!.trim().toLowerCase()) {
         goalsNorm = 1.0;
+        groundedFacts.push('Academic goal compatibility');
       } else {
-        const vWords = new Set(viewerGoals!.toLowerCase().split(/\s+/).filter(Boolean));
-        const cWords = new Set(candidateGoals!.toLowerCase().split(/\s+/).filter(Boolean));
+        const stopWords = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'i', 'want', 'with', 'my']);
+        const vWords = new Set(
+          viewerGoals!.toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter((w) => w && !stopWords.has(w))
+        );
+        const cWords = new Set(
+          candidateGoals!.toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter((w) => w && !stopWords.has(w))
+        );
         let common = 0;
         for (const w of vWords) if (cWords.has(w)) common++;
         const union = new Set([...vWords, ...cWords]).size;
-        goalsNorm = union > 0 ? Math.max(0.4, common / union) : 0.8;
+        goalsNorm = union > 0 ? common / union : 0.0;
+        if (goalsNorm > 0) {
+          groundedFacts.push('Academic goal compatibility');
+        }
       }
-      groundedFacts.push('Academic goal compatibility');
     } else {
       omittedFactors.push('Study Goals');
     }

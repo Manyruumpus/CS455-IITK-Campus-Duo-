@@ -7,6 +7,7 @@ import adminRouter from './routes/admin';
 import bookingRouter from './routes/booking';
 import agentRouter from './routes/agent';
 import discoveryRouter from './routes/discovery';
+import profileRouter from './routes/profile';
 import { errorHandler } from './middleware/errorHandler';
 import { DomainError } from './types';
 
@@ -33,6 +34,7 @@ export function createApp(): express.Application {
   app.use('/api/booking', bookingRouter);
   app.use('/api/agent', agentRouter);
   app.use('/api/discovery', discoveryRouter);
+  app.use('/api/profile', profileRouter);
 
   // 404 handler for unrecognized routes
   app.use((req: Request, res: Response, next: NextFunction) => {

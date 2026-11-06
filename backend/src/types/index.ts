@@ -295,3 +295,68 @@ export interface AdminSlotUpdateRequest {
   status?: SlotStatus;
   active?: boolean;
 }
+
+// --- Profile & Preferences Types ---
+export type StudyStyle = 'QUIET_FOCUSED' | 'DISCUSSION_HEAVY' | 'PROBLEM_SOLVING' | 'HYBRID';
+export type TargetPace = 'AHEAD_OF_CLASS' | 'STANDARD_REGULAR' | 'EXAM_CRAMMING';
+export type PreferredStudyTime = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'LATE_NIGHT';
+
+export interface StudyPreferences {
+  studyStyle?: StudyStyle;
+  preferredPace?: TargetPace;
+  preferredTimes: PreferredStudyTime[];
+  studyGoals?: string;
+  preferredLocation?: string;
+}
+
+export interface CourseEnrollment {
+  code: string;
+  name?: string;
+  department?: string;
+  instructor?: string;
+  courseId?: string;
+}
+
+export interface SocialInterestTag {
+  id?: string;
+  interestId?: string;
+  name: string;
+  category?: string;
+  description?: string;
+}
+
+export interface StudyConsentRecord {
+  hasConsent: boolean;
+  consentedAt?: string;
+}
+
+export interface SocialConsentRecord {
+  hasConsent: boolean;
+  consentedAt?: string;
+}
+
+export interface PrivateUserProfile {
+  userId: string;
+  email: string;
+  rollNumber: string;
+  displayName: string;
+  department: string;
+  degree: string;
+  year: number;
+  isOnboarded: boolean;
+  studyPreferences: StudyPreferences;
+  courses: CourseEnrollment[];
+  socialBio?: string;
+  socialInterests?: SocialInterestTag[];
+  studyConsent: StudyConsentRecord;
+  socialConsent: SocialConsentRecord;
+}
+
+export interface ProfileUpdateRequest {
+  displayName?: string;
+  studyPreferences?: Partial<StudyPreferences>;
+  courses?: CourseEnrollment[];
+  socialBio?: string;
+  socialInterests?: SocialInterestTag[];
+}
+

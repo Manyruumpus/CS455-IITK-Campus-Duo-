@@ -74,8 +74,9 @@ export function calculateStudyCompatibility(
   compatibilityBreakdown: CompatibilityBreakdown;
 } {
   // Required Factor 1: Course overlap (base weight: 35)
-  const actorCourses = (actorProfile.courses || []).map((c) => c.code.trim().toUpperCase());
-  const candidateCourses = (candidateProfile.courses || []).map((c) => c.code.trim().toUpperCase());
+  const normCode = (c: string) => c.replace(/^DB05-/i, '').trim().toUpperCase();
+  const actorCourses = (actorProfile.courses || []).map((c) => normCode(c.code));
+  const candidateCourses = (candidateProfile.courses || []).map((c) => normCode(c.code));
   const sharedCourses = actorCourses.filter((code) => candidateCourses.includes(code));
 
   const courseNorm =
@@ -140,7 +141,24 @@ export function calculateStudyCompatibility(
   const actorGoals = actorProfile.studyPreferences?.studyGoals?.trim();
   const candidateGoals = candidatePrivate?.studyPreferences?.studyGoals?.trim();
   const hasGoals = Boolean(actorGoals && candidateGoals);
-  const goalsNorm = hasGoals ? 0.8 : 0;
+  let goalsNorm = 0;
+  if (hasGoals) {
+    if (actorGoals!.toLowerCase() === candidateGoals!.toLowerCase()) {
+      goalsNorm = 1.0;
+    } else {
+      const stopWords = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'to', 'for', 'of', 'and', 'or', 'i', 'want', 'with', 'my']);
+      const aWords = new Set(
+        actorGoals!.toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter((w) => w && !stopWords.has(w))
+      );
+      const cWords = new Set(
+        candidateGoals!.toLowerCase().split(/\s+/).map((w) => w.replace(/[^a-z0-9]/g, '')).filter((w) => w && !stopWords.has(w))
+      );
+      let common = 0;
+      for (const w of aWords) if (cWords.has(w)) common++;
+      const union = new Set([...aWords, ...cWords]).size;
+      goalsNorm = union > 0 ? common / union : 0;
+    }
+  }
 
   // Active base weights total and independent completeness definition
   // Minimum valid input completeness is (35 + 25) / 100 = 0.60; complete data is 1.00
@@ -583,9 +601,25 @@ export class MockStudyService implements IStudyService {
       throw new AppError(ErrorCode.UNAUTHENTICATED, 'Sign in required to update study consent');
     }
 
-    const profile = mockStore.privateProfiles.get(actor.userId);
+    let profile = mockStore.privateProfiles.get(actor.userId);
     if (!profile) {
-      throw new AppError(ErrorCode.NOT_FOUND, 'Student profile not found');
+      profile = {
+        userId: actor.userId,
+        email: actor.email,
+        rollNumber: actor.rollNumber ?? '210000',
+        displayName: actor.name,
+        department: 'Engineering',
+        degree: 'B.Tech',
+        year: 4,
+        isOnboarded: actor.isOnboarded,
+        courses: [],
+        studyPreferences: {
+          preferredTimes: [],
+        },
+        studyConsent: { hasConsent: actor.hasStudyConsent },
+        socialConsent: { hasConsent: actor.hasSocialConsent },
+      };
+      mockStore.privateProfiles.set(actor.userId, profile);
     }
 
     if (optIn) {
@@ -655,20 +689,48 @@ export class MockStudyService implements IStudyService {
       return [];
     }
 
-    const actorProfile = mockStore.privateProfiles.get(actor.userId) ?? {
-      userId: actor.userId,
-      email: actor.email,
-      rollNumber: actor.rollNumber ?? '210000',
-      displayName: actor.name,
-      department: 'Engineering',
-      degree: 'B.Tech' as const,
-      year: 4,
-      isOnboarded: true,
-      courses: [],
-      studyPreferences: { preferredTimes: [] },
-      studyConsent: { hasConsent: true },
-      socialConsent: { hasConsent: false },
-    };
+    let actorProfile = mockStore.privateProfiles.get(actor.userId);
+    if (!actorProfile || !actorProfile.courses || actorProfile.courses.length === 0) {
+      if (typeof window !== 'undefined' && actor.sessionToken) {
+        try {
+          const res = await fetch('http://localhost:4000/api/profile/me', {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${actor.sessionToken}`,
+              'X-Campus-Duo-Test-Actor': actor.userId,
+            },
+            signal: context?.signal,
+          });
+          if (res.ok) {
+            const body = await res.json();
+            const liveProfile = body && typeof body === 'object' && 'data' in body ? body.data : body;
+            if (liveProfile && liveProfile.userId) {
+              actorProfile = liveProfile;
+              mockStore.privateProfiles.set(actor.userId, liveProfile);
+            }
+          }
+        } catch {
+          // ignore network failure
+        }
+      }
+    }
+
+    if (!actorProfile) {
+      actorProfile = {
+        userId: actor.userId,
+        email: actor.email,
+        rollNumber: actor.rollNumber ?? '210000',
+        displayName: actor.name,
+        department: 'Engineering',
+        degree: 'B.Tech' as const,
+        year: 4,
+        isOnboarded: true,
+        courses: [],
+        studyPreferences: { preferredTimes: [] },
+        studyConsent: { hasConsent: true },
+        socialConsent: { hasConsent: false },
+      };
+    }
 
     const hiddenSet = mockStore.hiddenStudyPartners.get(actor.userId);
     const passedSet = mockStore.passedStudyPartners.get(actor.userId);
@@ -859,20 +921,48 @@ export class MockStudyService implements IStudyService {
       return null;
     }
 
-    const actorProfile = mockStore.privateProfiles.get(actor.userId) ?? {
-      userId: actor.userId,
-      email: actor.email,
-      rollNumber: actor.rollNumber ?? '210000',
-      displayName: actor.name,
-      department: 'Engineering',
-      degree: 'B.Tech' as const,
-      year: 4,
-      isOnboarded: true,
-      courses: [],
-      studyPreferences: { preferredTimes: [] },
-      studyConsent: { hasConsent: true },
-      socialConsent: { hasConsent: false },
-    };
+    let actorProfile = mockStore.privateProfiles.get(actor.userId);
+    if (!actorProfile || !actorProfile.courses || actorProfile.courses.length === 0) {
+      if (typeof window !== 'undefined' && actor.sessionToken) {
+        try {
+          const res = await fetch('http://localhost:4000/api/profile/me', {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${actor.sessionToken}`,
+              'X-Campus-Duo-Test-Actor': actor.userId,
+            },
+            signal: context?.signal,
+          });
+          if (res.ok) {
+            const body = await res.json();
+            const liveProfile = body && typeof body === 'object' && 'data' in body ? body.data : body;
+            if (liveProfile && liveProfile.userId) {
+              actorProfile = liveProfile;
+              mockStore.privateProfiles.set(actor.userId, liveProfile);
+            }
+          }
+        } catch {
+          // ignore network failure
+        }
+      }
+    }
+
+    if (!actorProfile) {
+      actorProfile = {
+        userId: actor.userId,
+        email: actor.email,
+        rollNumber: actor.rollNumber ?? '210000',
+        displayName: actor.name,
+        department: 'Engineering',
+        degree: 'B.Tech' as const,
+        year: 4,
+        isOnboarded: true,
+        courses: [],
+        studyPreferences: { preferredTimes: [] },
+        studyConsent: { hasConsent: true },
+        socialConsent: { hasConsent: false },
+      };
+    }
 
     const compatibility = calculateStudyCompatibility(actorProfile, candidateProfile, candidatePrivate);
 
@@ -1261,9 +1351,25 @@ export class MockSocialService implements ISocialService {
       throw new AppError(ErrorCode.UNAUTHENTICATED, 'Sign in required to update consent');
     }
 
-    const profile = mockStore.privateProfiles.get(actor.userId);
+    let profile = mockStore.privateProfiles.get(actor.userId);
     if (!profile) {
-      throw new AppError(ErrorCode.NOT_FOUND, 'Student profile not found');
+      profile = {
+        userId: actor.userId,
+        email: actor.email,
+        rollNumber: actor.rollNumber ?? '210000',
+        displayName: actor.name,
+        department: 'Engineering',
+        degree: 'B.Tech',
+        year: 4,
+        isOnboarded: actor.isOnboarded,
+        courses: [],
+        studyPreferences: {
+          preferredTimes: [],
+        },
+        studyConsent: { hasConsent: actor.hasStudyConsent },
+        socialConsent: { hasConsent: actor.hasSocialConsent },
+      };
+      mockStore.privateProfiles.set(actor.userId, profile);
     }
 
     if (optIn) {

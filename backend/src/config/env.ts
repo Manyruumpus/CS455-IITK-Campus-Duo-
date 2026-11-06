@@ -6,6 +6,11 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
+// Test mode must use explicit PG* variables and never inherit DATABASE_URL.
+if (process.env.CAMPUS_DUO_TEST_MODE === 'true') {
+  delete process.env.DATABASE_URL;
+}
+
 export interface SmtpConfig {
   host?: string;
   port: number;
@@ -15,35 +20,64 @@ export interface SmtpConfig {
   from: string;
 }
 
+export type LlmProviderType = 'huggingface' | 'ollama' | 'none';
+
 export interface LlmConfig {
   enabled: boolean;
+  provider: LlmProviderType;
   token?: string;
   modelId: string;
+  ollamaHost: string;
   timeoutMs: number;
   configurationIssue?: string;
 }
 
 export const DEFAULT_HF_MODEL_ID = 'Qwen/Qwen3-4B-Instruct-2507';
+export const DEFAULT_OLLAMA_MODEL_ID = 'qwen2.5vl:3b';
+export const DEFAULT_OLLAMA_HOST_URL = 'http://localhost:11434';
 const DEFAULT_HF_TIMEOUT_MS = 20_000;
 const MIN_HF_TIMEOUT_MS = 1_000;
 const MAX_HF_TIMEOUT_MS = 30_000;
 
 export function getLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig {
   const enabled = env.ENABLE_LLM_INFERENCE === 'true';
+  const rawProvider = env.LLM_PROVIDER?.toLowerCase()?.trim();
+  const provider: LlmProviderType = !enabled
+    ? 'none'
+    : rawProvider === 'ollama'
+      ? 'ollama'
+      : rawProvider === 'huggingface'
+        ? 'huggingface'
+        : 'huggingface';
+
   const token = env.HF_TOKEN?.trim() || undefined;
-  const modelId = env.HF_MODEL_ID?.trim() || DEFAULT_HF_MODEL_ID;
-  const configuredTimeout = env.HF_TIMEOUT_MS;
+  const ollamaHost = env.OLLAMA_HOST?.trim() || DEFAULT_OLLAMA_HOST_URL;
+  const configuredTimeout = env.HF_TIMEOUT_MS || env.OLLAMA_TIMEOUT_MS;
   const timeoutMs = configuredTimeout === undefined
     ? DEFAULT_HF_TIMEOUT_MS
     : Number(configuredTimeout);
 
+  const modelId = provider === 'ollama'
+    ? (env.OLLAMA_MODEL?.trim() || DEFAULT_OLLAMA_MODEL_ID)
+    : (env.HF_MODEL_ID?.trim() || DEFAULT_HF_MODEL_ID);
+
   let configurationIssue: string | undefined;
   if (enabled) {
-    if (!token) {
-      configurationIssue = 'Inference is enabled but HF_TOKEN is missing.';
-    } else if (!/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelId)) {
-      configurationIssue = 'HF_MODEL_ID is invalid.';
-    } else if (
+    if (provider === 'huggingface') {
+      if (!token) {
+        configurationIssue = 'Inference is enabled but HF_TOKEN is missing.';
+      } else if (!/^[A-Za-z0-9][A-Za-z0-9._-]*\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(modelId)) {
+        configurationIssue = 'HF_MODEL_ID is invalid.';
+      }
+    } else if (provider === 'ollama') {
+      if (!modelId.trim()) {
+        configurationIssue = 'Ollama model ID is missing.';
+      } else if (!/^https?:\/\//i.test(ollamaHost)) {
+        configurationIssue = 'OLLAMA_HOST must be a valid HTTP or HTTPS URL.';
+      }
+    }
+
+    if (
       configuredTimeout !== undefined &&
       (!Number.isInteger(timeoutMs) || timeoutMs < MIN_HF_TIMEOUT_MS || timeoutMs > MAX_HF_TIMEOUT_MS)
     ) {
@@ -51,7 +85,7 @@ export function getLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig {
     }
   }
 
-  return { enabled, token, modelId, timeoutMs, configurationIssue };
+  return { enabled, provider, token, modelId, ollamaHost, timeoutMs, configurationIssue };
 }
 
 export interface EnvConfig {

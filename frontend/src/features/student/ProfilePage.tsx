@@ -30,6 +30,8 @@ import {
   AppError,
 } from '@/types';
 
+const normalizeCourseCode = (code: string) => code.replace(/^DB05-/i, '').trim().toUpperCase();
+
 const AVAILABLE_COURSES: CourseEnrollment[] = [
   { code: 'CS455', name: 'Computer Networks', department: 'CSE' },
   { code: 'MTH101', name: 'Mathematics I', department: 'MTH' },
@@ -87,8 +89,8 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ profile }) => {
       socialBio !== (profile.socialBio || '') ||
       studyStyle !== (profile.studyPreferences?.studyStyle || 'QUIET_FOCUSED') ||
       preferredPace !== (profile.studyPreferences?.preferredPace || 'STANDARD_REGULAR') ||
-      JSON.stringify(selectedCourses.map((c) => c.code).sort()) !==
-        JSON.stringify((profile.courses || []).map((c) => c.code).sort()) ||
+      JSON.stringify(selectedCourses.map((c) => normalizeCourseCode(c.code)).sort()) !==
+        JSON.stringify((profile.courses || []).map((c) => normalizeCourseCode(c.code)).sort()) ||
       JSON.stringify([...preferredTimes].sort()) !==
         JSON.stringify([...(profile.studyPreferences?.preferredTimes || [])].sort()) ||
       JSON.stringify(selectedInterests.map((i) => i.id).sort()) !==
@@ -140,8 +142,8 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ profile }) => {
 
   const toggleCourse = (course: CourseEnrollment) => {
     setSelectedCourses((prev) =>
-      prev.some((c) => c.code === course.code)
-        ? prev.filter((c) => c.code !== course.code)
+      prev.some((c) => normalizeCourseCode(c.code) === normalizeCourseCode(course.code))
+        ? prev.filter((c) => normalizeCourseCode(c.code) !== normalizeCourseCode(course.code))
         : [...prev, course]
     );
   };
@@ -239,7 +241,7 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ profile }) => {
             </label>
             <div className="flex flex-wrap gap-2">
               {AVAILABLE_COURSES.map((c) => {
-                const isSelected = selectedCourses.some((item) => item.code === c.code);
+                const isSelected = selectedCourses.some((item) => normalizeCourseCode(item.code) === normalizeCourseCode(c.code));
                 return (
                   <button
                     key={c.code}

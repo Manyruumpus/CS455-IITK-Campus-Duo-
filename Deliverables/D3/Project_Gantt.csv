@@ -1,0 +1,19 @@
+Milestone / Task ID,Deliverable,Task Description,Owner / Assignee,Planned Start,Planned Finish,Actual Start,Actual Finish,Git Commit / Evidence Ref,Status
+M0,D0,Deliverable 0: Project Proposal Submission,All Team Members,2026-08-15,2026-08-25,2026-08-15,2026-08-25,Deliverable_0_Project_Proposal_Campus_Duo.md,COMPLETED
+M1,D1,Deliverable 1: SRS Requirements & Architecture Documents,Mohit Parihar,2026-09-01,2026-09-24,2026-09-01,2026-09-23,required docs/01 to 05,COMPLETED
+KAN-35,D2,PostgreSQL Booking Engine & Concurrency Harness,Mohit Parihar,2026-10-01,2026-10-15,2026-10-01,2026-10-15,8fdea9297d0c6c4a40cc5c9351bcf383f01c1d76,COMPLETED
+KAN-49,D2,Bounded AI Assistant & Scoring Engine Recovery (Commit A),Chaitanya Vishnoi,2026-10-16,2026-10-25,2026-10-20,2026-11-04,4ac395279cbe469520682dc47ee4329d242642ed,COMPLETED
+KAN-45,D2,Hugging Face Inference Wiring & Runbook (Commit B),Chaitanya Vishnoi,2026-10-26,2026-11-02,2026-10-28,2026-11-04,c8d80dbeee2a74c398480358d5d82ac3055b1695,COMPLETED
+M2,D2,Deliverable 2: Working Implementation & Sprint Sign-off,All Team Members,2026-10-15,2026-10-31,2026-10-15,2026-11-04,docs/D2-runbook.md,COMPLETED
+KAN-70,D3,Dependency Vulnerability Remediation (body-parser qs),Sayani Patra,2026-11-04,2026-11-05,2026-11-04,2026-11-04,f4ee132e3621c1bd8a43a4c68368f75c06377797,COMPLETED
+KAN-71,D3,Availability Test Fixture Date Isolation,Mohit Parihar,2026-11-04,2026-11-05,2026-11-04,2026-11-04,f4ee132e3621c1bd8a43a4c68368f75c06377797,COMPLETED
+KAN-81,D3,Backend Coverage Instrumentation & V8 Provider Setup,Sayani Patra,2026-11-04,2026-11-05,2026-11-04,2026-11-05,backend/coverage/coverage-final.json,COMPLETED
+KAN-83,D3,10-Client PostgreSQL Concurrency Race Verification,Chaitanya Vishnoi,2026-11-04,2026-11-05,2026-11-04,2026-11-04,backend/tests/concurrency.race.test.ts,COMPLETED
+KAN-85,D3,API Latency & Performance Benchmark Analysis,Chaitanya Vishnoi,2026-11-04,2026-11-05,2026-11-04,2026-11-04,KAN85_PERFORMANCE_REPORT.md,COMPLETED
+KAN-86,D3,12-Scenario Failure and Recovery Verification,Chaitanya Vishnoi,2026-11-04,2026-11-05,2026-11-04,2026-11-04,KAN86_FAILURE_RECOVERY_REPORT.md,COMPLETED
+KAN-78,D3,STRIDE Security Architecture & Threat Model Report,Sayani Patra,2026-11-04,2026-11-05,2026-11-04,2026-11-05,Deliverables/D3/Security_Threat_Model.md,COMPLETED
+KAN-80,D3,Defect History Register (6 Verified Defects Fixed),Sayani Patra,2026-11-04,2026-11-05,2026-11-04,2026-11-05,Deliverables/D3/Defect_History.md,COMPLETED
+KAN-88,D3,3-Tier System Costing & Financial Architecture Model,Chaitanya Vishnoi,2026-11-04,2026-11-05,2026-11-04,2026-11-05,Deliverables/D3/Costing_Document.md,COMPLETED
+KAN-87,D3,Production Deployment Guide & Container Runbook,Chaitanya Vishnoi,2026-11-04,2026-11-05,2026-11-04,2026-11-05,Deliverables/D3/Deployment_Guide.md,COMPLETED
+KAN-75,D3,Final Requirements-to-Jira-to-Testing Traceability Matrix,Mohit Parihar,2026-11-04,2026-11-05,2026-11-04,2026-11-05,Deliverables/D3/Final_Traceability_Matrix.csv,COMPLETED
+M3,D3,Deliverable 3 Final Milestone Submission,All Team Members,2026-11-03,2026-11-06,2026-11-04,2026-11-05,Deliverables/D3/Submission_Checklist.md,READY FOR SUBMISSION

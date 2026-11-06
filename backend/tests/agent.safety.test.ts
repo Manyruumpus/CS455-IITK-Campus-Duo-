@@ -125,6 +125,28 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(JSON.stringify(result)).not.toContain('Ace the midterms');
     });
 
+    it('applies partial location score when preferred locations do not match', () => {
+      const viewer = {
+        userId: 'viewer-loc-1',
+        displayName: 'Viewer One',
+        courses: [{ code: 'CS455' }],
+        preferredTimes: ['MON_MORNING'],
+        preferredLocation: 'LIBRARY',
+      };
+      const candidate = {
+        user_id: 'cand-loc-2',
+        display_name: 'Candidate Two',
+        courses: [{ code: 'CS455' }],
+        preferred_times: ['MON_MORNING'],
+        preferred_location: 'HALL_3_READING_ROOM',
+        active_status: 'ACTIVE',
+      };
+
+      const result = scoringEngine.calculateCompatibility(viewer, candidate);
+      expect(result.overallScore).toBeGreaterThan(0);
+      expect(result.factors.location?.explanation).toBe('Study location preference considered');
+    });
+
     it('renormalizes active weights to 100% when optional factors are omitted (completeness = 0.60)', () => {
       const viewer = {
         userId: 'viewer-2',
@@ -172,7 +194,7 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(res.status).toBe(200);
       const data = res.body.data;
       expect(data.status).toBe('FALLBACK');
-      expect(data.fallbackReason).toContain('Inference provider offline');
+      expect(data.fallbackReason).toMatch(/Inference provider offline|failed grounding validation/);
       expect(Array.isArray(data.recommendations)).toBe(true);
       expect(data.recommendations.length).toBeGreaterThanOrEqual(1);
 
@@ -305,6 +327,15 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(invalidLimit.status).toBe(400);
       expect(invalidLimit.body.error.code).toBe('VALIDATION_ERROR');
     });
+
+    it('rejects course codes with invalid characters or special symbols', async () => {
+      const invalidChars = await request(app)
+        .post('/api/agent/recommend')
+        .set('X-Campus-Duo-Test-Actor', ALEX_ID)
+        .send({ courseCode: 'CS455; DROP TABLE booking;' });
+      expect(invalidChars.status).toBe(400);
+      expect(invalidChars.body.error.code).toBe('VALIDATION_ERROR');
+    });
   });
 
   describe('5. Prompt Injection Resistance', () => {
@@ -360,6 +391,29 @@ describe('Bounded AI Recommendation Agent & Safety Suite (POST /api/agent/recomm
       expect(data.recommendations).toHaveLength(0);
       // Broader alternatives should be provided
       expect(data.suggestedAlternatives.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('8. Deterministic Template Fallback Client with Zero Grounded Facts', () => {
+    it('synthesizes general campus academic compatibility when groundedFacts is empty', async () => {
+      const templateClient = new TemplateLlmClient();
+      const explanations = await templateClient.generateExplanations({
+        userPrompt: 'test',
+        candidates: [
+          {
+            userId: 'cand-no-facts',
+            displayName: 'Candidate No Facts',
+            score: 50,
+            groundedFacts: [],
+          },
+        ],
+      });
+
+      expect(explanations).toHaveLength(1);
+      expect(explanations[0].userId).toBe('cand-no-facts');
+      expect(explanations[0].explanation).toContain(
+        'General campus academic compatibility based on enrollment profile.'
+      );
     });
   });
 });

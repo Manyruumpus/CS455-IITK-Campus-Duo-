@@ -10,7 +10,7 @@ import { validateReturnPath } from '@/utils/navigation';
 import { UserSession } from '@/types';
 
 export const LoginPage: React.FC = () => {
-  const { switchRole, session, logout, isDemoAuthEnabled } = useDemoAuth();
+  const { switchRole, session, logout, isDemoAuthEnabled, isRestoringSession } = useDemoAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const fromParam = searchParams.get('from');
@@ -245,6 +245,14 @@ export const LoginPage: React.FC = () => {
   const handleSignOut = () => {
     logout();
   };
+
+  if (isRestoringSession) {
+    return (
+      <div role="status" aria-live="polite" className="text-center text-sm text-craft-muted py-10">
+        Restoring your session...
+      </div>
+    );
+  }
 
   // Default production without demo auth: render honest provider-neutral unavailable notice (Amendment B)
   if (!isDemoAuthEnabled) {

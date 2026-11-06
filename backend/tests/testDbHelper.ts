@@ -1,18 +1,67 @@
 import { Pool, PoolClient } from 'pg';
-import { getEnvConfig } from '../src/config/env';
 
 let migratorPool: Pool | null = null;
+let migratorVerificationPromise: Promise<void> | null = null;
+
+async function verifyMigratorConnection(rawConnect: () => Promise<PoolClient>): Promise<void> {
+  const client = await rawConnect();
+  try {
+    const res = await client.query<{ database_name: string; database_user: string }>(
+      'SELECT current_database() AS database_name, current_user AS database_user'
+    );
+    const row = res.rows[0];
+    if (!row || row.database_name !== 'campus_duo_test') {
+      throw new Error(
+        `Test migrator database mismatch: expected "campus_duo_test", got "${row?.database_name}"`
+      );
+    }
+    if (row.database_user !== 'campus_duo_test_migrator') {
+      throw new Error(
+        `Test migrator user mismatch: expected "campus_duo_test_migrator", got "${row?.database_user}"`
+      );
+    }
+  } finally {
+    client.release();
+  }
+}
 
 export function getMigratorPool(): Pool {
   if (!migratorPool) {
-    const config = getEnvConfig();
+    const password = process.env.CAMPUS_DUO_TEST_MIGRATOR_PASSWORD;
+    if (!password) {
+      throw new Error('CAMPUS_DUO_TEST_MIGRATOR_PASSWORD environment variable is required.');
+    }
+
+    const host = process.env.PGHOST || '127.0.0.1';
+    const port = parseInt(process.env.PGPORT || '5432', 10);
+
     migratorPool = new Pool({
-      host: config.db.host,
-      port: config.db.port,
-      database: config.db.database,
-      user: 'campus_duo_migrator',
-      password: process.env.CAMPUS_DUO_MIGRATOR_PASSWORD || 'cs455'
+      host,
+      port,
+      database: 'campus_duo_test',
+      user: 'campus_duo_test_migrator',
+      password
     });
+
+    const originalConnect = migratorPool.connect.bind(migratorPool);
+
+    migratorPool.connect = ((cb?: any): any => {
+      if (!migratorVerificationPromise) {
+        migratorVerificationPromise = verifyMigratorConnection(originalConnect).catch((err) => {
+          migratorVerificationPromise = null;
+          throw err;
+        });
+      }
+
+      if (typeof cb === 'function') {
+        migratorVerificationPromise
+          .then(() => originalConnect(cb))
+          .catch((err) => cb(err, undefined as any, () => {}));
+        return;
+      }
+
+      return migratorVerificationPromise.then(() => originalConnect());
+    }) as any;
   }
   return migratorPool;
 }
@@ -21,9 +70,39 @@ export async function closeMigratorPool(): Promise<void> {
   if (migratorPool) {
     await migratorPool.end();
     migratorPool = null;
+    migratorVerificationPromise = null;
   }
 }
 
+interface AuthorizedSyntheticLocation {
+  locationId: string;
+  name: string;
+  building: string;
+}
+
+const AUTHORIZED_SYNTHETIC_LOCATIONS: readonly AuthorizedSyntheticLocation[] = [
+  {
+    locationId: '00000000-0000-0000-0000-00000000d571',
+    name: '[SYNTHETIC TEST] Campus Duo Test Library',
+    building: '[SYNTHETIC] TEST-BUILDING'
+  },
+  {
+    locationId: '00000000-0000-0000-0000-00000000d571',
+    name: '[SYNTHETIC DEV SEED] Campus Duo Test Library',
+    building: '[SYNTHETIC] DEV-BUILDING'
+  }
+];
+
+/**
+ * Ensures parent synthetic study_location and study_table fixtures exist and creates or updates a test study_slot.
+ *
+ * Synthetic Parent Fixture Lifecycle:
+ * - Synthetic parent records (study_location and study_table) are intentionally retained as reusable,
+ *   shared fixtures in campus_duo_test. They are not destroyed during per-test teardown because
+ *   subsequent tests (availability, booking lifecycle, admin inventory) depend on their stable existence.
+ * - Dynamic test slots (study_slot) and all test-generated bookings, participants, idempotency records,
+ *   and audit events are strictly removed by cleanupTestData().
+ */
 export async function setupTestSlot(params: {
   slotId: string;
   tableId: string;
@@ -34,24 +113,154 @@ export async function setupTestSlot(params: {
   zone: string;
 }): Promise<void> {
   const pool = getMigratorPool();
-  await pool.query(
-    `INSERT INTO campus_duo.study_slot (
-      slot_id, table_id, location_id, local_date, start_time, end_time, zone, status, active
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'AVAILABLE', true)
-    ON CONFLICT (slot_id) DO UPDATE
-      SET local_date = EXCLUDED.local_date,
-          status = 'AVAILABLE',
-          active = true;`,
-    [
-      params.slotId,
-      params.tableId,
-      params.locationId,
-      params.localDate,
-      params.startTime,
-      params.endTime,
-      params.zone
-    ]
-  );
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN;');
+
+    // 1. Ensure the supplied synthetic study_location exists and strictly matches authorized specifications
+    const normalizedTargetId = params.locationId.toLowerCase();
+    const authorizedSpec = AUTHORIZED_SYNTHETIC_LOCATIONS.find(
+      (spec) => spec.locationId.toLowerCase() === normalizedTargetId
+    );
+
+    if (!authorizedSpec) {
+      throw new Error(
+        `Fixture inconsistency: location ID "${params.locationId}" is not in the authorized synthetic test location allowlist.`
+      );
+    }
+
+    const existingLoc = await client.query<{
+      name: string;
+      building: string;
+      active: boolean;
+    }>(
+      `SELECT name, building, active FROM campus_duo.study_location WHERE location_id = $1`,
+      [params.locationId]
+    );
+
+    if (existingLoc.rows.length > 0) {
+      const loc = existingLoc.rows[0];
+      const matchesAuthorized = AUTHORIZED_SYNTHETIC_LOCATIONS.some(
+        (spec) =>
+          spec.locationId.toLowerCase() === normalizedTargetId &&
+          spec.name === loc.name &&
+          spec.building === loc.building
+      );
+
+      if (!matchesAuthorized) {
+        throw new Error(
+          `Fixture inconsistency: existing location "${params.locationId}" attributes (name="${loc.name}", building="${loc.building}") do not match authorized synthetic test location specifications.`
+        );
+      }
+
+      if (!loc.active) {
+        await client.query(
+          `UPDATE campus_duo.study_location SET active = true WHERE location_id = $1`,
+          [params.locationId]
+        );
+      }
+    } else {
+      await client.query(
+        `INSERT INTO campus_duo.study_location (
+          location_id, name, building, open_time, close_time,
+          has_power_outlets, has_wifi6, noise_policy, active
+        ) VALUES (
+          $1, $2, $3,
+          '08:00', '22:00', true, true, 'WHISPER_COLLAB', true
+        );`,
+        [params.locationId, authorizedSpec.name, authorizedSpec.building]
+      );
+    }
+
+    // 2. Ensure the supplied synthetic study_table exists and belongs to the supplied location
+    const existingTable = await client.query<{ location_id: string; active: boolean }>(
+      `SELECT location_id, active FROM campus_duo.study_table WHERE table_id = $1`,
+      [params.tableId]
+    );
+
+    if (existingTable.rows.length > 0) {
+      const tableRow = existingTable.rows[0];
+      if (tableRow.location_id !== params.locationId) {
+        throw new Error(
+          `Fixture inconsistency: study_table "${params.tableId}" already exists and belongs to location "${tableRow.location_id}", not expected location "${params.locationId}".`
+        );
+      }
+      if (!tableRow.active) {
+        await client.query(
+          `UPDATE campus_duo.study_table SET active = true WHERE table_id = $1`,
+          [params.tableId]
+        );
+      }
+    } else {
+      // Determine table number, respecting (location_id, table_number) uniqueness
+      const defaultNumber = params.tableId.toLowerCase().endsWith('d572')
+        ? 'DB05-A'
+        : params.tableId.toLowerCase().endsWith('d573')
+        ? 'DB05-B'
+        : `T-${params.tableId.slice(-6)}`;
+
+      const numCollision = await client.query<{ table_id: string }>(
+        `SELECT table_id FROM campus_duo.study_table WHERE location_id = $1 AND table_number = $2`,
+        [params.locationId, defaultNumber]
+      );
+
+      let tableNumber = defaultNumber;
+      if (numCollision.rows.length > 0) {
+        const fallbackNumber = `T-${params.tableId.replace(/-/g, '').slice(-8)}`;
+        const fallbackCollision = await client.query<{ table_id: string }>(
+          `SELECT table_id FROM campus_duo.study_table WHERE location_id = $1 AND table_number = $2`,
+          [params.locationId, fallbackNumber]
+        );
+        if (fallbackCollision.rows.length > 0) {
+          throw new Error(
+            `Fixture inconsistency: unable to allocate a unique table_number for table "${params.tableId}" at location "${params.locationId}". Both "${defaultNumber}" and fallback "${fallbackNumber}" are occupied.`
+          );
+        }
+        tableNumber = fallbackNumber;
+      }
+
+      await client.query(
+        `INSERT INTO campus_duo.study_table (table_id, location_id, table_number, capacity, active)
+         VALUES ($1, $2, $3, 2, true)
+         ON CONFLICT (table_id) DO UPDATE
+           SET active = true;`,
+        [params.tableId, params.locationId, tableNumber]
+      );
+    }
+
+    // 3. Insert or update the study_slot (composite foreign key satisfied)
+    await client.query(
+      `INSERT INTO campus_duo.study_slot (
+        slot_id, table_id, location_id, local_date, start_time, end_time, zone, status, active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'AVAILABLE', true)
+      ON CONFLICT (slot_id) DO UPDATE
+        SET local_date = EXCLUDED.local_date,
+            start_time = EXCLUDED.start_time,
+            end_time = EXCLUDED.end_time,
+            zone = EXCLUDED.zone,
+            status = 'AVAILABLE',
+            active = true;`,
+      [
+        params.slotId,
+        params.tableId,
+        params.locationId,
+        params.localDate,
+        params.startTime,
+        params.endTime,
+        params.zone
+      ]
+    );
+
+    await client.query('COMMIT;');
+  } catch (err) {
+    // Suppress secondary rollback errors (e.g. if the connection or network dropped)
+    // to guarantee the original primary transaction exception is preserved and re-thrown.
+    await client.query('ROLLBACK;').catch(() => {});
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export interface CleanupOptions {
@@ -175,9 +384,19 @@ export async function cleanupTestData(
       );
     }
 
+    // 5. Clean up explicit test slot records themselves (preserving shared parent location/table)
+    if (resolvedSlotIds.length > 0) {
+      await client.query(
+        `DELETE FROM campus_duo.study_slot WHERE slot_id = ANY($1::uuid[])`,
+        [resolvedSlotIds]
+      );
+    }
+
     await client.query('COMMIT;');
   } catch (err) {
-    await client.query('ROLLBACK;');
+    // Suppress secondary rollback errors (e.g. if the connection or network dropped)
+    // to guarantee the original primary transaction exception is preserved and re-thrown.
+    await client.query('ROLLBACK;').catch(() => {});
     throw err;
   } finally {
     client.release();
@@ -277,4 +496,6 @@ export async function cleanupDiscoveryAndConnections(userIdA: string, userIdB: s
     client.release();
   }
 }
+
+
 

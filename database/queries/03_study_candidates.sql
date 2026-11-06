@@ -66,7 +66,7 @@ FROM (
           SELECT 1 FROM campus_duo.profile_course pc
           JOIN campus_duo.course c ON c.course_id = pc.course_id
           WHERE pc.user_id = u.user_id AND pc.enrollment_status = 'ACTIVE'
-            AND lower(c.code) = lower($2)
+            AND (lower(c.code) = lower($2) OR lower(c.code) = lower('DB05-' || $2) OR lower('DB05-' || c.code) = lower($2))
       ))
       AND ($3::text IS NULL OR p.study_style = $3)
       AND ($4::text IS NULL OR p.preferred_pace = $4)

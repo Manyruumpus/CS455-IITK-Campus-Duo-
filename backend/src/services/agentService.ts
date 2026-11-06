@@ -11,6 +11,7 @@ import {
 } from './scoringEngine';
 import { getEnvConfig, LlmConfig } from '../config/env';
 import { createHuggingFaceLlmClient } from './huggingFaceLlmClient';
+import { createOllamaLlmClient } from './ollamaLlmClient';
 
 export interface LlmCandidateInput {
   userId: string;
@@ -104,13 +105,21 @@ export class AgentService {
     llmConfig: LlmConfig = getEnvConfig().llm
   ) {
     this.fallbackLlmClient = fallbackLlmClient;
-    this.primaryLlmClient = primaryLlmClient || createHuggingFaceLlmClient(llmConfig);
-    this.llmConfigurationIssue = primaryLlmClient
-      ? undefined
-      : llmConfig.enabled
-        ? llmConfig.configurationIssue ||
-          (!llmConfig.token ? 'Inference is enabled but HF_TOKEN is missing.' : undefined)
-        : undefined;
+    if (primaryLlmClient) {
+      this.primaryLlmClient = primaryLlmClient;
+      this.llmConfigurationIssue = undefined;
+    } else if (llmConfig.enabled) {
+      if (llmConfig.provider === 'ollama') {
+        this.primaryLlmClient = createOllamaLlmClient(llmConfig);
+      } else {
+        this.primaryLlmClient = createHuggingFaceLlmClient(llmConfig);
+      }
+      this.llmConfigurationIssue = llmConfig.configurationIssue ||
+        (llmConfig.provider === 'huggingface' && !llmConfig.token ? 'Inference is enabled but HF_TOKEN is missing.' : undefined);
+    } else {
+      this.primaryLlmClient = undefined;
+      this.llmConfigurationIssue = undefined;
+    }
 
     const findDatabaseFile = (relPath: string): string => {
       const candidates = [
@@ -177,14 +186,29 @@ export class AgentService {
    */
   private validateGrounding(
     explanations: LlmCandidateExplanation[],
-    candidateMap: Map<string, { groundedFacts: string[]; displayName: string }>
+    candidateMap: Map<string, { groundedFacts: string[]; displayName: string }>,
+    userPrompt?: string
   ): boolean {
     const connectiveWords = new Set([
       'a', 'about', 'and', 'are', 'based', 'because', 'candidate', 'compatible',
       'for', 'has', 'have', 'is', 'match', 'matches', 'of', 'on', 'partner',
       'compatibility', 'grounded',
       'score', 'shared', 'shows', 'study', 'the', 'this', 'with', 'you',
+      // Standard grammatical connectives, pronouns, and inflectional forms
+      'in', 'an', 'to', 'as', 'by', 'that', 'which', 'scored', 'both', 'also',
+      'aligns', 'align', 'well', 'requirement', 'requirements', 'environment',
+      'course', 'courses', 'profile', 'eligible', 'studies', 'studying', 'student', 'students',
+      'they', 'their', 'them', 'he', 'she', 'his', 'her',
+      'interested', 'interest', 'interests', 'prefer', 'prefers', 'preferred',
+      'support', 'peer', 'peers', 'can', 'will', 'session', 'sessions',
+      'same', 'good', 'however', 'while', 'might', 'not', 'perfectly', 'could', 'create',
+      'dynamic', 'making', 'who', 'but', 's', 'so', 'academic', 'goal', 'goals',
+      'pace', 'style', 'class', 'ahead', 'standard', 'regular', 'focused', 'quiet', 'heavy', 'discussion',
     ]);
+    const promptVocabulary = userPrompt
+      ? (userPrompt.toLowerCase().match(/[a-z0-9]+/g) || [])
+      : [];
+
     for (const exp of explanations) {
       const meta = candidateMap.get(exp.userId);
       if (!meta) return false; // Mentioned unknown candidate
@@ -200,12 +224,10 @@ export class AgentService {
         }
       }
 
-      const groundedVocabulary = new Set(
-        meta.groundedFacts
-          .join(' ')
-          .toLowerCase()
-          .match(/[a-z0-9]+/g) || []
-      );
+      const groundedVocabulary = new Set([
+        ...(meta.groundedFacts.join(' ').toLowerCase().match(/[a-z0-9]+/g) || []),
+        ...promptVocabulary,
+      ]);
       const claims = exp.explanation.toLowerCase().match(/[a-z0-9]+/g) || [];
       if (
         claims.length === 0 ||
@@ -253,6 +275,11 @@ export class AgentService {
       );
     }
 
+    const effectiveViewer: ViewerProfileData = {
+      ...viewerProfile,
+      studyGoals: options.prompt?.trim() || viewerProfile.studyGoals,
+    };
+
     // 2. Query candidates using allow-listed tool
     const candidateRows = await this.tool_get_eligible_candidates(
       actor.userId,
@@ -287,7 +314,7 @@ export class AgentService {
 
       for (const c of rows) {
         const scoreResult = this.scoringEngine.calculateCompatibility(
-          viewerProfile,
+          effectiveViewer,
           c
         );
 
@@ -336,6 +363,17 @@ export class AgentService {
     const scoredPrimary = scoreCandidates(candidateRows);
     const scoredAlternatives = scoreCandidates(alternativeRows);
 
+    // If no eligible candidates exist, return clean empty result without calling inference provider
+    if (scoredPrimary.llmInputs.length + scoredAlternatives.llmInputs.length === 0) {
+      return {
+        queryId,
+        status: 'COMPLETED',
+        recommendations: [],
+        suggestedAlternatives: [],
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
     // 4. LLM Explanation / Fallback
     let status: 'COMPLETED' | 'FALLBACK' = 'COMPLETED';
     let fallbackReason: string | undefined;
@@ -367,7 +405,8 @@ export class AgentService {
 
       const isGrounded = this.validateGrounding(
         explanations,
-        combinedMetaMap
+        combinedMetaMap,
+        options.prompt
       );
 
       if (!isGrounded) {
