@@ -1,0 +1,16 @@
+{
+  "checkpointDate": "2026-11-06",
+  "command": "Set-Location backend; $env:PGDATABASE='campus_duo_test'; $env:PGUSER='campus_duo_app'; node .\\node_modules\\vitest\\vitest.mjs run tests/health.test.ts",
+  "scope": "health integration test against explicit campus_duo_test target",
+  "testFiles": 1,
+  "tests": 1,
+  "passed": 1,
+  "failed": 0,
+  "exitCode": 0,
+  "result": "passed",
+  "provenance": {
+    "branch": "fix/d3-backend-dependency-security",
+    "headAtCheck": "b9807f5e773892ce955bca417cc21ae68eb6e67e",
+    "worktree": "dirty"
+  }
+}

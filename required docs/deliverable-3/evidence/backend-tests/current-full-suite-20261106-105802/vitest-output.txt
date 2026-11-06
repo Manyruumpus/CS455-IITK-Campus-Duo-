@@ -1,0 +1,53 @@
+
+> campus-duo-backend@0.1.0 test
+> vitest run --coverage
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mC:/Users/mohit/OneDrive/Desktop/sem 7/CS455/Entire working/backend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+stderr | tests/errorHandler.test.ts > errorHandler > does not label another unique constraint as a booking conflict
+Unhandled backend error: [object Object]
+
+stderr | tests/errorHandler.test.ts > errorHandler > does not label an unexpected PostgreSQL SQLSTATE as a booking conflict
+Unhandled backend error: serialization failure
+
+ [32m✓[39m tests/errorHandler.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m tests/booking.service.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m tests/health.failure.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m tests/auth.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m tests/health.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 198[2mms[22m[39m
+ [32m✓[39m tests/availability.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 285[2mms[22m[39m
+ [32m✓[39m tests/concurrency.race.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 339[2mms[22m[39m
+ [32m✓[39m tests/booking.policy.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 373[2mms[22m[39m
+ [32m✓[39m tests/booking.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 393[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m9 passed[39m[22m[90m (9)[39m
+[2m      Tests [22m [1m[32m57 passed[39m[22m[90m (57)[39m
+[2m   Start at [22m 10:58:11
+[2m   Duration [22m 1.27s[2m (import 52%, tests 29%, transform 13%, worker 6%)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   89.91 |    85.71 |    82.5 |   90.57 |                   
+ src               |   41.17 |       25 |      25 |   43.75 |                   
+  app.ts           |   93.33 |       50 |   66.66 |   93.33 | 31                
+  server.ts        |       0 |        0 |       0 |       0 | 5-32              
+ src/config        |   96.77 |    53.57 |    87.5 |   96.66 |                   
+  db.ts            |   94.11 |    66.66 |   83.33 |   93.75 | 29                
+  env.ts           |     100 |       50 |     100 |     100 | 23-24,28-32       
+ src/middleware    |   91.89 |    96.15 |     100 |   91.89 |                   
+  auth.ts          |    87.5 |    93.33 |     100 |    87.5 | 74-79,90          
+  errorHandler.ts  |     100 |      100 |     100 |     100 |                   
+ src/repository    |     100 |      100 |     100 |     100 |                   
+  bookingRepo.ts   |     100 |      100 |     100 |     100 |                   
+ src/routes        |     100 |    86.36 |     100 |     100 |                   
+  booking.ts       |     100 |    86.36 |     100 |     100 | 29-54             
+  health.ts        |     100 |      100 |     100 |     100 |                   
+ src/services      |   98.75 |    98.68 |     100 |   98.75 |                   
+  ...ingService.ts |   98.75 |    98.68 |     100 |   98.75 | 64                
+ src/types         |     100 |      100 |     100 |     100 |                   
+  index.ts         |     100 |      100 |     100 |     100 |                   
+-------------------|---------|----------|---------|---------|-------------------

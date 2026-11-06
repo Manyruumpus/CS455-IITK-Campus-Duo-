@@ -1,0 +1,22 @@
+{
+  "ownershipId": "kan81-performance-20261103-213028-889",
+  "actorId": "bf385014-3e50-4168-b563-7722f1e06028",
+  "locationId": "1add7998-3da3-4684-b869-ad158733eb43",
+  "tableId": "77da268c-421d-4cca-a40b-beb8c18f299d",
+  "slotIds": [
+    "a10b15aa-ad58-42b5-a0a2-3369e7ee6e17",
+    "dcf6cf3f-878c-42ef-af60-3a3baf0ca4e7",
+    "424162f0-db2f-41f9-9c46-27429e4a05a7",
+    "26595b11-0a8f-478f-967f-61e4fceb1425",
+    "1e766a84-cb3f-4588-bc55-7336b44d20e7",
+    "f3bcd6d7-160d-456c-9c71-11f010e7f53e",
+    "9851e753-def4-4c48-95c6-5c76407fdd4b",
+    "50a4ad74-206c-4c1f-9843-5b3ef5f66522",
+    "37646fee-c31a-4593-a271-c698bc4e68a8",
+    "b85eaaf9-9fe3-4163-b1bf-808e2fb47a24",
+    "39d7a48d-6926-4dfd-af86-4b2d8af32aca",
+    "0a4ca2c1-ec45-4154-8882-eb90d85d211f"
+  ],
+  "testDate": "2026-11-14",
+  "database": "campus_duo_perf_20261103"
+}

@@ -1,0 +1,178 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for features/admin/AdminBookingsPage.tsx</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">features/admin</a> AdminBookingsPage.tsx</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">5.26% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>1/19</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/14</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/10</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">7.69% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>1/13</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React, { useState } from 'react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { TableWrapper } from '@/components/ui/TableWrapper';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { useAdminBookings, useAdminCancelBooking } from '@/queries/adminHooks';
+&nbsp;
+export const AdminBookingsPage: React.FC = <span class="fstat-no" title="function not covered" >() =&gt; {</span>
+  const [search, setSearch<span class="cstat-no" title="statement not covered" >] = useState('');</span>
+  const [selected, setSelected<span class="cstat-no" title="statement not covered" >] = useState&lt;string | null&gt;(null);</span>
+  const [reason, setReason<span class="cstat-no" title="statement not covered" >] = useState('');</span>
+  const <span class="cstat-no" title="statement not covered" >query = useAdminBookings({ search, status: 'ALL' });</span>
+  const <span class="cstat-no" title="statement not covered" >cancel = useAdminCancelBooking();</span>
+<span class="cstat-no" title="statement not covered" >  return &lt;div className="space-y-6"&gt;</span>
+    &lt;PageHeader title="Campus Study Table Reservations" subtitle="Admin oversight reuses canonical booking records and demo cancellation permissions." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reservations', isCurrent: true }]} /&gt;
+    &lt;FilterBar searchQuery={search} onSearchChange={setSearch} searchPlaceholder="Search booking, student, or table..." onClearFilters={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSearch('')} /</span>&gt;
+    {query.isError &amp;&amp; &lt;p role="alert" className="text-sm text-red-300"&gt;{query.error.message}&lt;/p&gt;}
+    &lt;TableWrapper caption="Service-backed booking oversight"&gt;
+      &lt;thead&gt;&lt;tr&gt;&lt;th className="p-3"&gt;Reference&lt;/th&gt;&lt;th className="p-3"&gt;Participants&lt;/th&gt;&lt;th className="p-3"&gt;Location/table&lt;/th&gt;&lt;th className="p-3"&gt;Date/time&lt;/th&gt;&lt;th className="p-3"&gt;Status&lt;/th&gt;&lt;th className="p-3"&gt;Action&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+      &lt;tbody&gt;{query.data?.map(<span class="fstat-no" title="function not covered" >(b</span>ooking) =&gt; <span class="cstat-no" title="statement not covered" >&lt;tr key={booking.bookingId} className="border-t border-craft-border/60"&gt;</span>
+        &lt;td className="p-3 font-mono text-amber-400"&gt;{booking.bookingId}&lt;/td&gt;&lt;td className="p-3 text-xs"&gt;{booking.participants.map(<span class="fstat-no" title="function not covered" >(p</span>) =&gt; <span class="cstat-no" title="statement not covered" >p.displayName)</span>.join(' + ')}&lt;/td&gt;&lt;td className="p-3"&gt;{booking.locationName} / {booking.tableNumber}&lt;/td&gt;&lt;td className="p-3 text-craft-muted"&gt;{booking.localDate} · {booking.timeWindow}&lt;/td&gt;&lt;td className="p-3"&gt;&lt;Badge variant={booking.status === 'CONFIRMED' ? 'success' : 'outline'}&gt;{booking.status}&lt;/Badge&gt;&lt;/td&gt;
+        &lt;td className="p-3"&gt;{booking.status === 'CONFIRMED' ? &lt;Button variant="danger" size="sm" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(booking.bookingId)}&gt;C</span>ancel&lt;/Button&gt; : '—'}&lt;/td&gt;
+      &lt;/tr&gt;)}&lt;/tbody&gt;
+    &lt;/TableWrapper&gt;
+    &lt;Dialog isOpen={!!selected} onClose={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(null)} t</span>itle="Cancel booking" description="Both participants receive the existing deduplicated booking notification. The reason is recorded in the redacted mock audit." footer={&lt;&gt;&lt;Button variant="outline" size="sm" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(null)}&gt;C</span>ancel&lt;/Button&gt;&lt;Button variant="danger" size="sm" isLoading={cancel.isPending} disabled={!reason.trim() || cancel.isPending} onClick={<span class="fstat-no" title="function not covered" >() =&gt; {</span> <span class="cstat-no" title="statement not covered" >if (!selected || !reason.trim()) <span class="cstat-no" title="statement not covered" >return; <span class="cstat-no" title="statement not covered" >c</span></span>ancel.mutate({ bookingId: selected, reason, confirm: true }, { onSuccess: <span class="fstat-no" title="function not covered" >() =&gt; {</span> <span class="cstat-no" title="statement not covered" >setSelected(null); <span class="cstat-no" title="statement not covered" >s</span>etReason(''); }</span> }); }</span>}&gt;Confirm cancellation&lt;/Button&gt;&lt;/&gt;}&gt;
+      &lt;label htmlFor="booking-cancel-reason" className="text-xs"&gt;Required reason&lt;/label&gt;&lt;textarea id="booking-cancel-reason" value={reason} onChange={<span class="fstat-no" title="function not covered" >(e</span>vent) =&gt; <span class="cstat-no" title="statement not covered" >setReason(event.target.value)} m</span>axLength={500} className="w-full mt-2 bg-craft-base border border-craft-border rounded px-2 py-1 text-xs" /&gt;{cancel.isError &amp;&amp; &lt;p role="alert" className="text-xs text-red-300 mt-2"&gt;{cancel.error.message}&lt;/p&gt;}
+    &lt;/Dialog&gt;
+  &lt;/div&gt;;
+};
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-06T04:45:49.447Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

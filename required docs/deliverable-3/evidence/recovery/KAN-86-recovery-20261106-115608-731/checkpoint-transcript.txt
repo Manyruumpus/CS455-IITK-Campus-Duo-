@@ -1,0 +1,25 @@
+**********************
+PowerShell transcript start
+Start time: 20261106115608
+Username: OMICRON\mohit
+RunAs User: OMICRON\mohit
+Configuration Name: 
+Machine: OMICRON (Microsoft Windows NT 10.0.26300.0)
+Host Application: C:\Program Files\PowerShell\7\pwsh.dll -NoProfile -NoLogo -NonInteractive -Command try { [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false) } catch {}; try { if (Microsoft.PowerShell.Utility\Get-Variable -Name PSStyle -ErrorAction Ignore) { $PSStyle.OutputRendering = 'PlainText' } } catch {}; function Clear-Host {}; $global:LASTEXITCODE = 0; $__copilotCommandFinished = $false; $__copilotSuccess = $false; try { $global:LASTEXITCODE = 0
+& 'C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\Run-IsolatedRecoveryCheckpoint.ps1'
+$__copilotSuccess = $?
+$__copilotCommandFinished = $true
+ } finally { if ($__copilotCommandFinished) { if (-not $__copilotSuccess -and $LASTEXITCODE -is [int] -and $LASTEXITCODE -ne 0) { $host.SetShouldExit($LASTEXITCODE) } elseif (-not $__copilotSuccess) { $host.SetShouldExit(1) } else { $host.SetShouldExit(0) } } }
+Process ID: 17988
+PSVersion: 7.6.9
+PSEdition: Core
+GitCommitId: 7.6.9
+OS: Microsoft Windows 10.0.26300
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+pg_ctl: no server running
+Starting isolated PostgreSQL cluster...

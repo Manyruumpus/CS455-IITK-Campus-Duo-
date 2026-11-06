@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-11-06T11:06:48.9374392+05:30",
+  "targetDatabase": "campus_duo_perf_20261103",
+  "mode": "ResumePartialTarget",
+  "psqlPath": "C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe",
+  "flywayPath": "C:\\Users\\mohit\\Tools\\flyway-13.10.0\\flyway.cmd",
+  "command": ".\\backend\\scripts\\performance\\Invoke-Prepare-PerformanceDatabase.ps1 -PerformanceDatabase campus_duo_perf_20261103 -ResumePartialTarget -PsqlPath 'C:\\Program Files\\PostgreSQL\\18\\bin\\psql.exe' -FlywayPath 'C:\\Users\\mohit\\Tools\\flyway-13.10.0\\flyway.cmd'",
+  "exitCode": 1,
+  "logPath": "C:\\Users\\mohit\\OneDrive\\Desktop\\sem 7\\CS455\\Entire working\\required docs\\deliverable-3\\evidence\\performance-provisioning\\current-20261106-110633\\provisioning-output.txt",
+  "scope": "Provision, migrate, verify migration completion, and verify application-role access only; no load test."
+}

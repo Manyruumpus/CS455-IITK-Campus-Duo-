@@ -1,0 +1,10 @@
+id,task,start,end,owner,dependencies,status,date_classification
+1,Booking API and concurrency isolation,2026-10-14,2026-10-15,not recorded,booking implementation,fixed and evidenced,actual GitHub dates
+2,Dependency remediation,2026-11-03,2026-11-03,not recorded,dependency audit,fixed and audited,reconstructed from evidence timestamp
+3,Availability fixture isolation,2026-11-03,2026-11-03,not recorded,backend fixtures,fixed and evidenced,reconstructed from evidence timestamp
+4,Backend post-review tests/coverage,2026-11-03,2026-11-03,not recorded,backend implementation,verified historical checkpoint,actual evidence timestamp
+5,Frontend quality and coverage,2026-11-06,2026-11-06,Copilot-assisted user-controlled,frontend test suite,verified locally,actual current-session timestamp
+6,Performance/load/optimization,2026-11-06,2026-11-06,not recorded,credentials and target database,pending,deadline-day estimate
+7,Isolated PostgreSQL recovery,2026-11-06,2026-11-06,Copilot-assisted approval pending,recovery cluster and interruption approval,prepared exercise pending,deadline-day estimate
+8,Jira/dashboard/traceability synchronization,2026-11-06,2026-11-06,not recorded,Jira read/export access,mapping supplied external evidence pending,deadline-day estimate
+9,Submission packaging,2026-11-06,2026-11-06,not recorded,all evidence reconciliation,pending,deadline-day estimate

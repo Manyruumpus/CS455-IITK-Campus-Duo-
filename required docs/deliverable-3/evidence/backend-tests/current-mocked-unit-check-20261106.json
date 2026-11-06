@@ -1,0 +1,20 @@
+{
+  "checkpointDate": "2026-11-06",
+  "command": "Set-Location backend; $env:PGDATABASE='campus_duo_test'; $env:PGUSER='campus_duo_app'; node .\\node_modules\\vitest\\vitest.mjs run tests/auth.test.ts tests/errorHandler.test.ts tests/booking.service.test.ts tests/health.failure.test.ts",
+  "scope": "mocked/unit backend subset; no migrator fixture writes",
+  "testFiles": 4,
+  "tests": 29,
+  "passed": 29,
+  "failed": 0,
+  "exitCode": 0,
+  "result": "passed",
+  "provenance": {
+    "branch": "fix/d3-backend-dependency-security",
+    "headAtCheck": "b9807f5e773892ce955bca417cc21ae68eb6e67e",
+    "worktree": "dirty"
+  },
+  "limitations": [
+    "This is not the full backend suite.",
+    "Database-backed fixture suites require CAMPUS_DUO_MIGRATOR_PASSWORD."
+  ]
+}

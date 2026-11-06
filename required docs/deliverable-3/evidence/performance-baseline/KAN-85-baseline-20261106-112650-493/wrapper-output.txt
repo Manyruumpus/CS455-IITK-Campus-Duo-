@@ -1,0 +1,1223 @@
+DO
+BEGIN
+                      set_config                       |              set_config              |              set_config              |              set_config              | set_config |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              
+-------------------------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------
+ kan81-performance-KAN-85-baseline-20261106-112650-493 | 92e90a5b-1e44-4eff-88fe-def52f5ecf48 | 3bc6dcfb-df92-4ea6-8cd3-24a5550cec15 | 35a53531-5446-4790-b969-5448f1bd0dc7 | 2026-11-14 | d010ce88-f90e-4c76-8822-aebde0c18bd5 | 48a14cd1-a8c7-488c-ac42-ce6f3a8357ae | b87260ba-fe80-40db-9cb0-c4350ff44f38 | 80ae42ca-dce8-499f-843a-f1776b8e2c24 | adf7086b-d259-4c02-b644-062371289a62 | 0c63b3e2-56b0-463c-9702-2e6bab523bae | 4d304cc0-df23-476f-9c45-8439a6a17bd0 | c50e5782-72f6-4c05-9927-09b040bd12a7 | 2b08e719-b0e0-4b19-9659-cb667aac3c42 | dc5f85b5-a85d-4346-af35-7ea70916d635 | af19d6cb-5691-4576-9696-d66fbd86d0a4 | e436069a-d71b-4a60-b6d9-348c1f52ae7b
+(1 row)
+
+DO
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 12
+     fixture_database     |    fixture_role     |               actor_id               |             location_id              | test_date  |                                                                                                                                                                                                                      expected_slot_ids                                                                                                                                                                                                                      
+--------------------------+---------------------+--------------------------------------+--------------------------------------+------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ campus_duo_perf_20261103 | campus_duo_migrator | 92e90a5b-1e44-4eff-88fe-def52f5ecf48 | 3bc6dcfb-df92-4ea6-8cd3-24a5550cec15 | 2026-11-14 | d010ce88-f90e-4c76-8822-aebde0c18bd5,48a14cd1-a8c7-488c-ac42-ce6f3a8357ae,b87260ba-fe80-40db-9cb0-c4350ff44f38,80ae42ca-dce8-499f-843a-f1776b8e2c24,adf7086b-d259-4c02-b644-062371289a62,0c63b3e2-56b0-463c-9702-2e6bab523bae,4d304cc0-df23-476f-9c45-8439a6a17bd0,c50e5782-72f6-4c05-9927-09b040bd12a7,2b08e719-b0e0-4b19-9659-cb667aac3c42,dc5f85b5-a85d-4346-af35-7ea70916d635,af19d6cb-5691-4576-9696-d66fbd86d0a4,e436069a-d71b-4a60-b6d9-348c1f52ae7b
+(1 row)
+
+COMMIT
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\backend\scripts\performance\availability-k6.js
+        output: json (C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\required docs\deliverable-3\evidence\performance\availability-KAN-85-baseline-20261106-112650-493\warmup-metrics.json)
+
+     scenarios: (100.00%) 1 scenario, 1 max VUs, 25s max duration (incl. graceful stop):
+              * availability: Up to 1 looping VUs for 20s over 3 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+running (01.0s), 1/1 VUs, 501 complete and 0 interrupted iterations
+availability   [   5% ] 1/1 VUs  01.0s/20.0s
+
+running (02.0s), 1/1 VUs, 1132 complete and 0 interrupted iterations
+availability   [  10% ] 1/1 VUs  02.0s/20.0s
+
+running (03.0s), 1/1 VUs, 1750 complete and 0 interrupted iterations
+availability   [  15% ] 1/1 VUs  03.0s/20.0s
+
+running (04.0s), 1/1 VUs, 2277 complete and 0 interrupted iterations
+availability   [  20% ] 1/1 VUs  04.0s/20.0s
+
+running (05.0s), 1/1 VUs, 2769 complete and 0 interrupted iterations
+availability   [  25% ] 1/1 VUs  05.0s/20.0s
+
+running (06.0s), 1/1 VUs, 3310 complete and 0 interrupted iterations
+availability   [  30% ] 1/1 VUs  06.0s/20.0s
+
+running (07.0s), 1/1 VUs, 3846 complete and 0 interrupted iterations
+availability   [  35% ] 1/1 VUs  07.0s/20.0s
+
+running (08.0s), 1/1 VUs, 4393 complete and 0 interrupted iterations
+availability   [  40% ] 1/1 VUs  08.0s/20.0s
+
+running (09.0s), 1/1 VUs, 4924 complete and 0 interrupted iterations
+availability   [  45% ] 1/1 VUs  09.0s/20.0s
+
+running (10.0s), 1/1 VUs, 5472 complete and 0 interrupted iterations
+availability   [  50% ] 1/1 VUs  10.0s/20.0s
+
+running (11.0s), 1/1 VUs, 6066 complete and 0 interrupted iterations
+availability   [  55% ] 1/1 VUs  11.0s/20.0s
+
+running (12.0s), 1/1 VUs, 6558 complete and 0 interrupted iterations
+availability   [  60% ] 1/1 VUs  12.0s/20.0s
+
+running (13.0s), 1/1 VUs, 7134 complete and 0 interrupted iterations
+availability   [  65% ] 1/1 VUs  13.0s/20.0s
+
+running (14.0s), 1/1 VUs, 7723 complete and 0 interrupted iterations
+availability   [  70% ] 1/1 VUs  14.0s/20.0s
+
+running (15.0s), 1/1 VUs, 8312 complete and 0 interrupted iterations
+availability   [  75% ] 1/1 VUs  15.0s/20.0s
+
+running (16.0s), 1/1 VUs, 8902 complete and 0 interrupted iterations
+availability   [  80% ] 1/1 VUs  16.0s/20.0s
+
+running (17.0s), 1/1 VUs, 9493 complete and 0 interrupted iterations
+availability   [  85% ] 1/1 VUs  17.0s/20.0s
+
+running (18.0s), 1/1 VUs, 10065 complete and 0 interrupted iterations
+availability   [  90% ] 1/1 VUs  18.0s/20.0s
+
+running (19.0s), 1/1 VUs, 10663 complete and 0 interrupted iterations
+availability   [  95% ] 1/1 VUs  19.0s/20.0s
+
+running (20.0s), 1/1 VUs, 11256 complete and 0 interrupted iterations
+availability   [ 100% ] 1/1 VUs  20.0s/20.0s
+{
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 20001.5624
+  },
+  "metrics": {
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(90)": 2.5164600000000004,
+        "p(95)": 2.787254999999999,
+        "p(99)": 3.7481430000000002,
+        "avg": 1.774570119026474,
+        "min": 0.5047,
+        "med": 1.6083,
+        "max": 172.8198
+      }
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 1.2483265233611711,
+        "min": 0,
+        "med": 1.1632,
+        "max": 171.1805,
+        "p(90)": 2.0550200000000003,
+        "p(95)": 2.562315,
+        "p(99)": 3.560162000000001
+      }
+    },
+    "http_req_failed": {
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 11258
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      },
+      "type": "rate",
+      "contains": "default"
+    },
+    "http_req_duration{endpoint:availability}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 1.1632,
+        "max": 171.1805,
+        "p(90)": 2.0550200000000003,
+        "p(95)": 2.562315,
+        "p(99)": 3.560162000000001,
+        "avg": 1.2483265233611711,
+        "min": 0
+      },
+      "thresholds": {
+        "p(95)<1000": {
+          "ok": true
+        }
+      }
+    },
+    "checks": {
+      "values": {
+        "rate": 1,
+        "passes": 45032,
+        "fails": 0
+      },
+      "type": "rate",
+      "contains": "default"
+    },
+    "availability_correctness_failures": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 1.0747,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0.0012091224018475754,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0.00009302718067152246,
+        "min": 0,
+        "med": 0,
+        "max": 1.0473,
+        "p(90)": 0
+      }
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 72501520,
+        "rate": 3624792.8311840277
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 11258,
+        "rate": 562.8560296869608
+      }
+    },
+    "http_req_sending": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 1.5912,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0.004297024338248358,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 2600598,
+        "rate": 130019.74285768795
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(99)": 3.560162000000001,
+        "avg": 1.2483265233611711,
+        "min": 0,
+        "med": 1.1632,
+        "max": 171.1805,
+        "p(90)": 2.0550200000000003,
+        "p(95)": 2.562315
+      }
+    },
+    "http_req_waiting": {
+      "contains": "time",
+      "values": {
+        "p(99)": 3.2390790000000074,
+        "avg": 1.1217309468822196,
+        "min": 0,
+        "med": 0.71425,
+        "max": 170.3633,
+        "p(90)": 1.8154100000000006,
+        "p(95)": 2.3027799999999994
+      },
+      "type": "trend"
+    },
+    "http_req_receiving": {
+      "values": {
+        "min": 0,
+        "med": 0,
+        "max": 2.3797,
+        "p(90)": 0.7248300000000001,
+        "p(95)": 0.9279299999999999,
+        "p(99)": 1.063101,
+        "avg": 0.12229855214069997
+      },
+      "type": "trend",
+      "contains": "time"
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 1,
+        "min": 1,
+        "max": 1
+      }
+    },
+    "iterations": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 11258,
+        "rate": 562.8560296869608
+      }
+    }
+  },
+  "root_group": {
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": [
+        {
+          "fails": 0,
+          "name": "availability returns HTTP 200",
+          "path": "::availability returns HTTP 200",
+          "id": "c361cb066ff3953ee8d4314314eba1db",
+          "passes": 11258
+        },
+        {
+          "path": "::availability response has data array",
+          "id": "bf8a6b3009717e399c11062cbde3ab3b",
+          "passes": 11258,
+          "fails": 0,
+          "name": "availability response has data array"
+        },
+        {
+          "name": "availability response has requestId",
+          "path": "::availability response has requestId",
+          "id": "976ba8ae43f398e60611c9a5f5eca916",
+          "passes": 11258,
+          "fails": 0
+        },
+        {
+          "name": "availability has exact fixture slots and values",
+          "path": "::availability has exact fixture slots and values",
+          "id": "29a416362ee786836fb1fd5b91edc829",
+          "passes": 11258,
+          "fails": 0
+        }
+      ],
+    "name": "",
+    "path": ""
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)",
+      "p(99)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  }
+}
+running (20.0s), 0/1 VUs, 11258 complete and 0 interrupted iterations
+availability ✓ [ 100% ] 0/1 VUs  20s
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\backend\scripts\performance\availability-k6.js
+        output: json (C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\required docs\deliverable-3\evidence\performance\availability-KAN-85-baseline-20261106-112650-493\measured-metrics.json)
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 3m5s max duration (incl. graceful stop):
+              * availability: Up to 10 looping VUs for 3m0s over 4 stages (gracefulRampDown: 5s, gracefulStop: 30s)
+
+
+running (0m01.0s), 01/10 VUs, 578 complete and 0 interrupted iterations
+availability   [   1% ] 01/10 VUs  0m01.0s/3m00.0s
+
+running (0m02.0s), 01/10 VUs, 1122 complete and 0 interrupted iterations
+availability   [   1% ] 01/10 VUs  0m02.0s/3m00.0s
+
+running (0m03.0s), 01/10 VUs, 1673 complete and 0 interrupted iterations
+availability   [   2% ] 01/10 VUs  0m03.0s/3m00.0s
+
+running (0m04.0s), 01/10 VUs, 2250 complete and 0 interrupted iterations
+availability   [   2% ] 01/10 VUs  0m04.0s/3m00.0s
+
+running (0m05.0s), 01/10 VUs, 2843 complete and 0 interrupted iterations
+availability   [   3% ] 01/10 VUs  0m05.0s/3m00.0s
+
+running (0m06.0s), 01/10 VUs, 3448 complete and 0 interrupted iterations
+availability   [   3% ] 01/10 VUs  0m06.0s/3m00.0s
+
+running (0m07.0s), 01/10 VUs, 4035 complete and 0 interrupted iterations
+availability   [   4% ] 01/10 VUs  0m07.0s/3m00.0s
+
+running (0m08.0s), 01/10 VUs, 4631 complete and 0 interrupted iterations
+availability   [   4% ] 01/10 VUs  0m08.0s/3m00.0s
+
+running (0m09.0s), 01/10 VUs, 5213 complete and 0 interrupted iterations
+availability   [   5% ] 01/10 VUs  0m09.0s/3m00.0s
+
+running (0m10.0s), 01/10 VUs, 5789 complete and 0 interrupted iterations
+availability   [   6% ] 01/10 VUs  0m10.0s/3m00.0s
+
+running (0m11.0s), 01/10 VUs, 6386 complete and 0 interrupted iterations
+availability   [   6% ] 01/10 VUs  0m11.0s/3m00.0s
+
+running (0m12.0s), 01/10 VUs, 6942 complete and 0 interrupted iterations
+availability   [   7% ] 01/10 VUs  0m12.0s/3m00.0s
+
+running (0m13.0s), 01/10 VUs, 7523 complete and 0 interrupted iterations
+availability   [   7% ] 01/10 VUs  0m13.0s/3m00.0s
+
+running (0m14.0s), 01/10 VUs, 8122 complete and 0 interrupted iterations
+availability   [   8% ] 01/10 VUs  0m14.0s/3m00.0s
+
+running (0m15.0s), 01/10 VUs, 8730 complete and 0 interrupted iterations
+availability   [   8% ] 01/10 VUs  0m15.0s/3m00.0s
+
+running (0m16.0s), 01/10 VUs, 9280 complete and 0 interrupted iterations
+availability   [   9% ] 01/10 VUs  0m16.0s/3m00.0s
+
+running (0m17.0s), 01/10 VUs, 9884 complete and 0 interrupted iterations
+availability   [   9% ] 01/10 VUs  0m17.0s/3m00.0s
+
+running (0m18.0s), 01/10 VUs, 10477 complete and 0 interrupted iterations
+availability   [  10% ] 01/10 VUs  0m18.0s/3m00.0s
+
+running (0m19.0s), 01/10 VUs, 11062 complete and 0 interrupted iterations
+availability   [  11% ] 01/10 VUs  0m19.0s/3m00.0s
+
+running (0m20.0s), 01/10 VUs, 11663 complete and 0 interrupted iterations
+availability   [  11% ] 01/10 VUs  0m20.0s/3m00.0s
+
+running (0m21.0s), 01/10 VUs, 12272 complete and 0 interrupted iterations
+availability   [  12% ] 01/10 VUs  0m21.0s/3m00.0s
+
+running (0m22.0s), 01/10 VUs, 12861 complete and 0 interrupted iterations
+availability   [  12% ] 01/10 VUs  0m22.0s/3m00.0s
+
+running (0m23.0s), 01/10 VUs, 13446 complete and 0 interrupted iterations
+availability   [  13% ] 01/10 VUs  0m23.0s/3m00.0s
+
+running (0m24.0s), 01/10 VUs, 14027 complete and 0 interrupted iterations
+availability   [  13% ] 01/10 VUs  0m24.0s/3m00.0s
+
+running (0m25.0s), 01/10 VUs, 14629 complete and 0 interrupted iterations
+availability   [  14% ] 01/10 VUs  0m25.0s/3m00.0s
+
+running (0m26.0s), 01/10 VUs, 15216 complete and 0 interrupted iterations
+availability   [  14% ] 01/10 VUs  0m26.0s/3m00.0s
+
+running (0m27.0s), 01/10 VUs, 15836 complete and 0 interrupted iterations
+availability   [  15% ] 01/10 VUs  0m27.0s/3m00.0s
+
+running (0m28.0s), 01/10 VUs, 16435 complete and 0 interrupted iterations
+availability   [  16% ] 01/10 VUs  0m28.0s/3m00.0s
+
+running (0m29.0s), 01/10 VUs, 17042 complete and 0 interrupted iterations
+availability   [  16% ] 01/10 VUs  0m29.0s/3m00.0s
+
+running (0m30.0s), 01/10 VUs, 17654 complete and 0 interrupted iterations
+availability   [  17% ] 01/10 VUs  0m30.0s/3m00.0s
+
+running (0m31.0s), 01/10 VUs, 18212 complete and 0 interrupted iterations
+availability   [  17% ] 01/10 VUs  0m31.0s/3m00.0s
+
+running (0m32.0s), 01/10 VUs, 18754 complete and 0 interrupted iterations
+availability   [  18% ] 01/10 VUs  0m32.0s/3m00.0s
+
+running (0m33.0s), 01/10 VUs, 19299 complete and 0 interrupted iterations
+availability   [  18% ] 01/10 VUs  0m33.0s/3m00.0s
+
+running (0m34.0s), 01/10 VUs, 19838 complete and 0 interrupted iterations
+availability   [  19% ] 01/10 VUs  0m34.0s/3m00.0s
+
+running (0m35.0s), 01/10 VUs, 20403 complete and 0 interrupted iterations
+availability   [  19% ] 01/10 VUs  0m35.0s/3m00.0s
+
+running (0m36.0s), 01/10 VUs, 20950 complete and 0 interrupted iterations
+availability   [  20% ] 01/10 VUs  0m36.0s/3m00.0s
+
+running (0m37.0s), 01/10 VUs, 21505 complete and 0 interrupted iterations
+availability   [  21% ] 01/10 VUs  0m37.0s/3m00.0s
+
+running (0m38.0s), 01/10 VUs, 22058 complete and 0 interrupted iterations
+availability   [  21% ] 01/10 VUs  0m38.0s/3m00.0s
+
+running (0m39.0s), 01/10 VUs, 22595 complete and 0 interrupted iterations
+availability   [  22% ] 01/10 VUs  0m39.0s/3m00.0s
+
+running (0m40.0s), 01/10 VUs, 23163 complete and 0 interrupted iterations
+availability   [  22% ] 01/10 VUs  0m40.0s/3m00.0s
+
+running (0m41.0s), 01/10 VUs, 23696 complete and 0 interrupted iterations
+availability   [  23% ] 01/10 VUs  0m41.0s/3m00.0s
+
+running (0m42.0s), 01/10 VUs, 24247 complete and 0 interrupted iterations
+availability   [  23% ] 01/10 VUs  0m42.0s/3m00.0s
+
+running (0m43.0s), 01/10 VUs, 24773 complete and 0 interrupted iterations
+availability   [  24% ] 01/10 VUs  0m43.0s/3m00.0s
+
+running (0m44.0s), 01/10 VUs, 25335 complete and 0 interrupted iterations
+availability   [  24% ] 01/10 VUs  0m44.0s/3m00.0s
+
+running (0m45.0s), 01/10 VUs, 25880 complete and 0 interrupted iterations
+availability   [  25% ] 01/10 VUs  0m45.0s/3m00.0s
+
+running (0m46.0s), 02/10 VUs, 26906 complete and 0 interrupted iterations
+availability   [  26% ] 02/10 VUs  0m46.0s/3m00.0s
+
+running (0m47.0s), 02/10 VUs, 28029 complete and 0 interrupted iterations
+availability   [  26% ] 02/10 VUs  0m47.0s/3m00.0s
+
+running (0m48.0s), 02/10 VUs, 29139 complete and 0 interrupted iterations
+availability   [  27% ] 02/10 VUs  0m48.0s/3m00.0s
+
+running (0m49.0s), 02/10 VUs, 30164 complete and 0 interrupted iterations
+availability   [  27% ] 02/10 VUs  0m49.0s/3m00.0s
+
+running (0m50.0s), 02/10 VUs, 31206 complete and 0 interrupted iterations
+availability   [  28% ] 02/10 VUs  0m50.0s/3m00.0s
+
+running (0m51.0s), 02/10 VUs, 32266 complete and 0 interrupted iterations
+availability   [  28% ] 02/10 VUs  0m51.0s/3m00.0s
+
+running (0m52.0s), 02/10 VUs, 33307 complete and 0 interrupted iterations
+availability   [  29% ] 02/10 VUs  0m52.0s/3m00.0s
+
+running (0m53.0s), 02/10 VUs, 34382 complete and 0 interrupted iterations
+availability   [  29% ] 02/10 VUs  0m53.0s/3m00.0s
+
+running (0m54.0s), 02/10 VUs, 35397 complete and 0 interrupted iterations
+availability   [  30% ] 02/10 VUs  0m54.0s/3m00.0s
+
+running (0m55.0s), 02/10 VUs, 36437 complete and 0 interrupted iterations
+availability   [  31% ] 02/10 VUs  0m55.0s/3m00.0s
+
+running (0m56.0s), 02/10 VUs, 37465 complete and 0 interrupted iterations
+availability   [  31% ] 02/10 VUs  0m56.0s/3m00.0s
+
+running (0m57.0s), 02/10 VUs, 38518 complete and 0 interrupted iterations
+availability   [  32% ] 02/10 VUs  0m57.0s/3m00.0s
+
+running (0m58.0s), 02/10 VUs, 39565 complete and 0 interrupted iterations
+availability   [  32% ] 02/10 VUs  0m58.0s/3m00.0s
+
+running (0m59.0s), 02/10 VUs, 40626 complete and 0 interrupted iterations
+availability   [  33% ] 02/10 VUs  0m59.0s/3m00.0s
+
+running (1m00.0s), 02/10 VUs, 41664 complete and 0 interrupted iterations
+availability   [  33% ] 02/10 VUs  1m00.0s/3m00.0s
+
+running (1m01.0s), 03/10 VUs, 43189 complete and 0 interrupted iterations
+availability   [  34% ] 03/10 VUs  1m01.0s/3m00.0s
+
+running (1m02.0s), 03/10 VUs, 44739 complete and 0 interrupted iterations
+availability   [  34% ] 03/10 VUs  1m02.0s/3m00.0s
+
+running (1m03.0s), 03/10 VUs, 46306 complete and 0 interrupted iterations
+availability   [  35% ] 03/10 VUs  1m03.0s/3m00.0s
+
+running (1m04.0s), 03/10 VUs, 47823 complete and 0 interrupted iterations
+availability   [  36% ] 03/10 VUs  1m04.0s/3m00.0s
+
+running (1m05.0s), 03/10 VUs, 49342 complete and 0 interrupted iterations
+availability   [  36% ] 03/10 VUs  1m05.0s/3m00.0s
+
+running (1m06.0s), 03/10 VUs, 50883 complete and 0 interrupted iterations
+availability   [  37% ] 03/10 VUs  1m06.0s/3m00.0s
+
+running (1m07.0s), 03/10 VUs, 52368 complete and 0 interrupted iterations
+availability   [  37% ] 03/10 VUs  1m07.0s/3m00.0s
+
+running (1m08.0s), 03/10 VUs, 53893 complete and 0 interrupted iterations
+availability   [  38% ] 03/10 VUs  1m08.0s/3m00.0s
+
+running (1m09.0s), 03/10 VUs, 55514 complete and 0 interrupted iterations
+availability   [  38% ] 03/10 VUs  1m09.0s/3m00.0s
+
+running (1m10.0s), 03/10 VUs, 57148 complete and 0 interrupted iterations
+availability   [  39% ] 03/10 VUs  1m10.0s/3m00.0s
+
+running (1m11.0s), 03/10 VUs, 58823 complete and 0 interrupted iterations
+availability   [  39% ] 03/10 VUs  1m11.0s/3m00.0s
+
+running (1m12.0s), 03/10 VUs, 60440 complete and 0 interrupted iterations
+availability   [  40% ] 03/10 VUs  1m12.0s/3m00.0s
+
+running (1m13.0s), 03/10 VUs, 62078 complete and 0 interrupted iterations
+availability   [  41% ] 03/10 VUs  1m13.0s/3m00.0s
+
+running (1m14.0s), 03/10 VUs, 63663 complete and 0 interrupted iterations
+availability   [  41% ] 03/10 VUs  1m14.0s/3m00.0s
+
+running (1m15.0s), 03/10 VUs, 65310 complete and 0 interrupted iterations
+availability   [  42% ] 03/10 VUs  1m15.0s/3m00.0s
+
+running (1m16.0s), 04/10 VUs, 67179 complete and 0 interrupted iterations
+availability   [  42% ] 04/10 VUs  1m16.0s/3m00.0s
+
+running (1m17.0s), 04/10 VUs, 69116 complete and 0 interrupted iterations
+availability   [  43% ] 04/10 VUs  1m17.0s/3m00.0s
+
+running (1m18.0s), 04/10 VUs, 70933 complete and 0 interrupted iterations
+availability   [  43% ] 04/10 VUs  1m18.0s/3m00.0s
+
+running (1m19.0s), 04/10 VUs, 72833 complete and 0 interrupted iterations
+availability   [  44% ] 04/10 VUs  1m19.0s/3m00.0s
+
+running (1m20.0s), 04/10 VUs, 74710 complete and 0 interrupted iterations
+availability   [  44% ] 04/10 VUs  1m20.0s/3m00.0s
+
+running (1m21.0s), 04/10 VUs, 76600 complete and 0 interrupted iterations
+availability   [  45% ] 04/10 VUs  1m21.0s/3m00.0s
+
+running (1m22.0s), 04/10 VUs, 78516 complete and 0 interrupted iterations
+availability   [  46% ] 04/10 VUs  1m22.0s/3m00.0s
+
+running (1m23.0s), 04/10 VUs, 80362 complete and 0 interrupted iterations
+availability   [  46% ] 04/10 VUs  1m23.0s/3m00.0s
+
+running (1m24.0s), 04/10 VUs, 82236 complete and 0 interrupted iterations
+availability   [  47% ] 04/10 VUs  1m24.0s/3m00.0s
+
+running (1m25.0s), 04/10 VUs, 84083 complete and 0 interrupted iterations
+availability   [  47% ] 04/10 VUs  1m25.0s/3m00.0s
+
+running (1m26.0s), 04/10 VUs, 85998 complete and 0 interrupted iterations
+availability   [  48% ] 04/10 VUs  1m26.0s/3m00.0s
+
+running (1m27.0s), 04/10 VUs, 87859 complete and 0 interrupted iterations
+availability   [  48% ] 04/10 VUs  1m27.0s/3m00.0s
+
+running (1m28.0s), 04/10 VUs, 89723 complete and 0 interrupted iterations
+availability   [  49% ] 04/10 VUs  1m28.0s/3m00.0s
+
+running (1m29.0s), 04/10 VUs, 91614 complete and 0 interrupted iterations
+availability   [  49% ] 04/10 VUs  1m29.0s/3m00.0s
+
+running (1m30.0s), 04/10 VUs, 93533 complete and 0 interrupted iterations
+availability   [  50% ] 04/10 VUs  1m30.0s/3m00.0s
+
+running (1m31.0s), 05/10 VUs, 95509 complete and 0 interrupted iterations
+availability   [  51% ] 05/10 VUs  1m31.0s/3m00.0s
+
+running (1m32.0s), 05/10 VUs, 97605 complete and 0 interrupted iterations
+availability   [  51% ] 05/10 VUs  1m32.0s/3m00.0s
+
+running (1m33.0s), 05/10 VUs, 99631 complete and 0 interrupted iterations
+availability   [  52% ] 05/10 VUs  1m33.0s/3m00.0s
+
+running (1m34.0s), 05/10 VUs, 101739 complete and 0 interrupted iterations
+availability   [  52% ] 05/10 VUs  1m34.0s/3m00.0s
+
+running (1m35.0s), 05/10 VUs, 103802 complete and 0 interrupted iterations
+availability   [  53% ] 05/10 VUs  1m35.0s/3m00.0s
+
+running (1m36.0s), 05/10 VUs, 105894 complete and 0 interrupted iterations
+availability   [  53% ] 05/10 VUs  1m36.0s/3m00.0s
+
+running (1m37.0s), 05/10 VUs, 108033 complete and 0 interrupted iterations
+availability   [  54% ] 05/10 VUs  1m37.0s/3m00.0s
+
+running (1m38.0s), 05/10 VUs, 110151 complete and 0 interrupted iterations
+availability   [  54% ] 05/10 VUs  1m38.0s/3m00.0s
+
+running (1m39.0s), 05/10 VUs, 112228 complete and 0 interrupted iterations
+availability   [  55% ] 05/10 VUs  1m39.0s/3m00.0s
+
+running (1m40.0s), 05/10 VUs, 114324 complete and 0 interrupted iterations
+availability   [  56% ] 05/10 VUs  1m40.0s/3m00.0s
+
+running (1m41.0s), 05/10 VUs, 116423 complete and 0 interrupted iterations
+availability   [  56% ] 05/10 VUs  1m41.0s/3m00.0s
+
+running (1m42.0s), 05/10 VUs, 118482 complete and 0 interrupted iterations
+availability   [  57% ] 05/10 VUs  1m42.0s/3m00.0s
+
+running (1m43.0s), 06/10 VUs, 120613 complete and 0 interrupted iterations
+availability   [  57% ] 06/10 VUs  1m43.0s/3m00.0s
+
+running (1m44.0s), 06/10 VUs, 122801 complete and 0 interrupted iterations
+availability   [  58% ] 06/10 VUs  1m44.0s/3m00.0s
+
+running (1m45.0s), 06/10 VUs, 124995 complete and 0 interrupted iterations
+availability   [  58% ] 06/10 VUs  1m45.0s/3m00.0s
+
+running (1m46.0s), 06/10 VUs, 127161 complete and 0 interrupted iterations
+availability   [  59% ] 06/10 VUs  1m46.0s/3m00.0s
+
+running (1m47.0s), 06/10 VUs, 129336 complete and 0 interrupted iterations
+availability   [  59% ] 06/10 VUs  1m47.0s/3m00.0s
+
+running (1m48.0s), 06/10 VUs, 131510 complete and 0 interrupted iterations
+availability   [  60% ] 06/10 VUs  1m48.0s/3m00.0s
+
+running (1m49.0s), 06/10 VUs, 133658 complete and 0 interrupted iterations
+availability   [  61% ] 06/10 VUs  1m49.0s/3m00.0s
+
+running (1m50.0s), 06/10 VUs, 135841 complete and 0 interrupted iterations
+availability   [  61% ] 06/10 VUs  1m50.0s/3m00.0s
+
+running (1m51.0s), 06/10 VUs, 138064 complete and 0 interrupted iterations
+availability   [  62% ] 06/10 VUs  1m51.0s/3m00.0s
+
+running (1m52.0s), 06/10 VUs, 140288 complete and 0 interrupted iterations
+availability   [  62% ] 06/10 VUs  1m52.0s/3m00.0s
+
+running (1m53.0s), 06/10 VUs, 142503 complete and 0 interrupted iterations
+availability   [  63% ] 06/10 VUs  1m53.0s/3m00.0s
+
+running (1m54.0s), 06/10 VUs, 144653 complete and 0 interrupted iterations
+availability   [  63% ] 06/10 VUs  1m54.0s/3m00.0s
+
+running (1m55.0s), 07/10 VUs, 146862 complete and 0 interrupted iterations
+availability   [  64% ] 07/10 VUs  1m55.0s/3m00.0s
+
+running (1m56.0s), 07/10 VUs, 149097 complete and 0 interrupted iterations
+availability   [  64% ] 07/10 VUs  1m56.0s/3m00.0s
+
+running (1m57.0s), 07/10 VUs, 151330 complete and 0 interrupted iterations
+availability   [  65% ] 07/10 VUs  1m57.0s/3m00.0s
+
+running (1m58.0s), 07/10 VUs, 153576 complete and 0 interrupted iterations
+availability   [  66% ] 07/10 VUs  1m58.0s/3m00.0s
+
+running (1m59.0s), 07/10 VUs, 155805 complete and 0 interrupted iterations
+availability   [  66% ] 07/10 VUs  1m59.0s/3m00.0s
+
+running (2m00.0s), 07/10 VUs, 158056 complete and 0 interrupted iterations
+availability   [  67% ] 07/10 VUs  2m00.0s/3m00.0s
+
+running (2m01.0s), 07/10 VUs, 160315 complete and 0 interrupted iterations
+availability   [  67% ] 07/10 VUs  2m01.0s/3m00.0s
+
+running (2m02.0s), 07/10 VUs, 162514 complete and 0 interrupted iterations
+availability   [  68% ] 07/10 VUs  2m02.0s/3m00.0s
+
+running (2m03.0s), 07/10 VUs, 164740 complete and 0 interrupted iterations
+availability   [  68% ] 07/10 VUs  2m03.0s/3m00.0s
+
+running (2m04.0s), 07/10 VUs, 166974 complete and 0 interrupted iterations
+availability   [  69% ] 07/10 VUs  2m04.0s/3m00.0s
+
+running (2m05.0s), 07/10 VUs, 169213 complete and 0 interrupted iterations
+availability   [  69% ] 07/10 VUs  2m05.0s/3m00.0s
+
+running (2m06.0s), 07/10 VUs, 171419 complete and 0 interrupted iterations
+availability   [  70% ] 07/10 VUs  2m06.0s/3m00.0s
+
+running (2m07.0s), 08/10 VUs, 173651 complete and 0 interrupted iterations
+availability   [  71% ] 08/10 VUs  2m07.0s/3m00.0s
+
+running (2m08.0s), 08/10 VUs, 175928 complete and 0 interrupted iterations
+availability   [  71% ] 08/10 VUs  2m08.0s/3m00.0s
+
+running (2m09.0s), 08/10 VUs, 178241 complete and 0 interrupted iterations
+availability   [  72% ] 08/10 VUs  2m09.0s/3m00.0s
+
+running (2m10.0s), 08/10 VUs, 180491 complete and 0 interrupted iterations
+availability   [  72% ] 08/10 VUs  2m10.0s/3m00.0s
+
+running (2m11.0s), 08/10 VUs, 182711 complete and 0 interrupted iterations
+availability   [  73% ] 08/10 VUs  2m11.0s/3m00.0s
+
+running (2m12.0s), 08/10 VUs, 184966 complete and 0 interrupted iterations
+availability   [  73% ] 08/10 VUs  2m12.0s/3m00.0s
+
+running (2m13.0s), 08/10 VUs, 187212 complete and 0 interrupted iterations
+availability   [  74% ] 08/10 VUs  2m13.0s/3m00.0s
+
+running (2m14.0s), 08/10 VUs, 189526 complete and 0 interrupted iterations
+availability   [  74% ] 08/10 VUs  2m14.0s/3m00.0s
+
+running (2m15.0s), 08/10 VUs, 191728 complete and 0 interrupted iterations
+availability   [  75% ] 08/10 VUs  2m15.0s/3m00.0s
+
+running (2m16.0s), 08/10 VUs, 193981 complete and 0 interrupted iterations
+availability   [  76% ] 08/10 VUs  2m16.0s/3m00.0s
+
+running (2m17.0s), 08/10 VUs, 196256 complete and 0 interrupted iterations
+availability   [  76% ] 08/10 VUs  2m17.0s/3m00.0s
+
+running (2m18.0s), 08/10 VUs, 198530 complete and 0 interrupted iterations
+availability   [  77% ] 08/10 VUs  2m18.0s/3m00.0s
+
+running (2m19.0s), 09/10 VUs, 200742 complete and 0 interrupted iterations
+availability   [  77% ] 09/10 VUs  2m19.0s/3m00.0s
+
+running (2m20.0s), 09/10 VUs, 203010 complete and 0 interrupted iterations
+availability   [  78% ] 09/10 VUs  2m20.0s/3m00.0s
+
+running (2m21.0s), 09/10 VUs, 205329 complete and 0 interrupted iterations
+availability   [  78% ] 09/10 VUs  2m21.0s/3m00.0s
+
+running (2m22.0s), 09/10 VUs, 207651 complete and 0 interrupted iterations
+availability   [  79% ] 09/10 VUs  2m22.0s/3m00.0s
+
+running (2m23.0s), 09/10 VUs, 209929 complete and 0 interrupted iterations
+availability   [  79% ] 09/10 VUs  2m23.0s/3m00.0s
+
+running (2m24.0s), 09/10 VUs, 212218 complete and 0 interrupted iterations
+availability   [  80% ] 09/10 VUs  2m24.0s/3m00.0s
+
+running (2m25.0s), 09/10 VUs, 214446 complete and 0 interrupted iterations
+availability   [  81% ] 09/10 VUs  2m25.0s/3m00.0s
+
+running (2m26.0s), 09/10 VUs, 216735 complete and 0 interrupted iterations
+availability   [  81% ] 09/10 VUs  2m26.0s/3m00.0s
+
+running (2m27.0s), 09/10 VUs, 218996 complete and 0 interrupted iterations
+availability   [  82% ] 09/10 VUs  2m27.0s/3m00.0s
+
+running (2m28.0s), 09/10 VUs, 221263 complete and 0 interrupted iterations
+availability   [  82% ] 09/10 VUs  2m28.0s/3m00.0s
+
+running (2m29.0s), 09/10 VUs, 223578 complete and 0 interrupted iterations
+availability   [  83% ] 09/10 VUs  2m29.0s/3m00.0s
+
+running (2m30.0s), 09/10 VUs, 225824 complete and 0 interrupted iterations
+availability   [  83% ] 09/10 VUs  2m30.0s/3m00.0s
+
+running (2m31.0s), 10/10 VUs, 228052 complete and 0 interrupted iterations
+availability   [  84% ] 10/10 VUs  2m31.0s/3m00.0s
+
+running (2m32.0s), 10/10 VUs, 230335 complete and 0 interrupted iterations
+availability   [  84% ] 10/10 VUs  2m32.0s/3m00.0s
+
+running (2m33.0s), 10/10 VUs, 232568 complete and 0 interrupted iterations
+availability   [  85% ] 10/10 VUs  2m33.0s/3m00.0s
+
+running (2m34.0s), 09/10 VUs, 234800 complete and 0 interrupted iterations
+availability   [  86% ] 09/10 VUs  2m34.0s/3m00.0s
+
+running (2m35.0s), 09/10 VUs, 237053 complete and 0 interrupted iterations
+availability   [  86% ] 09/10 VUs  2m35.0s/3m00.0s
+
+running (2m36.0s), 09/10 VUs, 239336 complete and 0 interrupted iterations
+availability   [  87% ] 09/10 VUs  2m36.0s/3m00.0s
+
+running (2m37.0s), 08/10 VUs, 241624 complete and 0 interrupted iterations
+availability   [  87% ] 08/10 VUs  2m37.0s/3m00.0s
+
+running (2m38.0s), 08/10 VUs, 243880 complete and 0 interrupted iterations
+availability   [  88% ] 08/10 VUs  2m38.0s/3m00.0s
+
+running (2m39.0s), 08/10 VUs, 245900 complete and 0 interrupted iterations
+availability   [  88% ] 08/10 VUs  2m39.0s/3m00.0s
+
+running (2m40.0s), 07/10 VUs, 247800 complete and 0 interrupted iterations
+availability   [  89% ] 07/10 VUs  2m40.0s/3m00.0s
+
+running (2m41.0s), 07/10 VUs, 249671 complete and 0 interrupted iterations
+availability   [  89% ] 07/10 VUs  2m41.0s/3m00.0s
+
+running (2m42.0s), 07/10 VUs, 251609 complete and 0 interrupted iterations
+availability   [  90% ] 07/10 VUs  2m42.0s/3m00.0s
+
+running (2m43.0s), 06/10 VUs, 253530 complete and 0 interrupted iterations
+availability   [  91% ] 06/10 VUs  2m43.0s/3m00.0s
+
+running (2m44.0s), 06/10 VUs, 255413 complete and 0 interrupted iterations
+availability   [  91% ] 06/10 VUs  2m44.0s/3m00.0s
+
+running (2m45.0s), 06/10 VUs, 257282 complete and 0 interrupted iterations
+availability   [  92% ] 06/10 VUs  2m45.0s/3m00.0s
+
+running (2m46.0s), 05/10 VUs, 259021 complete and 0 interrupted iterations
+availability   [  92% ] 05/10 VUs  2m46.0s/3m00.0s
+
+running (2m47.0s), 05/10 VUs, 260871 complete and 0 interrupted iterations
+availability   [  93% ] 05/10 VUs  2m47.0s/3m00.0s
+
+running (2m48.0s), 05/10 VUs, 262715 complete and 0 interrupted iterations
+availability   [  93% ] 05/10 VUs  2m48.0s/3m00.0s
+
+running (2m49.0s), 04/10 VUs, 264396 complete and 0 interrupted iterations
+availability   [  94% ] 04/10 VUs  2m49.0s/3m00.0s
+
+running (2m50.0s), 04/10 VUs, 266136 complete and 0 interrupted iterations
+availability   [  94% ] 04/10 VUs  2m50.0s/3m00.0s
+
+running (2m51.0s), 04/10 VUs, 267954 complete and 0 interrupted iterations
+availability   [  95% ] 04/10 VUs  2m51.0s/3m00.0s
+
+running (2m52.0s), 03/10 VUs, 269486 complete and 0 interrupted iterations
+availability   [  96% ] 03/10 VUs  2m52.0s/3m00.0s
+
+running (2m53.0s), 03/10 VUs, 271125 complete and 0 interrupted iterations
+availability   [  96% ] 03/10 VUs  2m53.0s/3m00.0s
+
+running (2m54.0s), 03/10 VUs, 272726 complete and 0 interrupted iterations
+availability   [  97% ] 03/10 VUs  2m54.0s/3m00.0s
+
+running (2m55.0s), 02/10 VUs, 273855 complete and 0 interrupted iterations
+availability   [  97% ] 02/10 VUs  2m55.0s/3m00.0s
+
+running (2m56.0s), 02/10 VUs, 274987 complete and 0 interrupted iterations
+availability   [  98% ] 02/10 VUs  2m56.0s/3m00.0s
+
+running (2m57.0s), 02/10 VUs, 276092 complete and 0 interrupted iterations
+availability   [  98% ] 02/10 VUs  2m57.0s/3m00.0s
+
+running (2m58.0s), 01/10 VUs, 276708 complete and 0 interrupted iterations
+availability   [  99% ] 01/10 VUs  2m58.0s/3m00.0s
+
+running (2m59.0s), 01/10 VUs, 277329 complete and 0 interrupted iterations
+availability   [  99% ] 01/10 VUs  2m59.0s/3m00.0s
+
+running (3m00.0s), 01/10 VUs, 277928 complete and 0 interrupted iterations
+availability   [ 100% ] 01/10 VUs  3m00.0s/3m00.0s
+{
+  "metrics": {
+    "http_req_duration{endpoint:availability}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.46153151501629,
+        "min": 0,
+        "med": 2.3239,
+        "max": 162.5635,
+        "p(90)": 3.8798,
+        "p(95)": 4.2965,
+        "p(99)": 5.042070000000001
+      },
+      "thresholds": {
+        "p(95)<1000": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_sending": {
+      "contains": "time",
+      "values": {
+        "max": 1.9539,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0.5128400000000024,
+        "avg": 0.007658971831137958,
+        "min": 0,
+        "med": 0
+      },
+      "type": "trend"
+    },
+    "data_received": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "count": 1789875640,
+        "rate": 9943715.00156278
+      }
+    },
+    "http_reqs": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 277931,
+        "rate": 1544.0551244662702
+      }
+    },
+    "iterations": {
+      "contains": "default",
+      "values": {
+        "count": 277931,
+        "rate": 1544.0551244662702
+      },
+      "type": "counter"
+    },
+    "http_req_failed": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "rate": 0,
+        "passes": 0,
+        "fails": 277931
+      },
+      "thresholds": {
+        "rate==0": {
+          "ok": true
+        }
+      }
+    },
+    "availability_correctness_failures": {
+      "type": "counter",
+      "contains": "default",
+      "values": {
+        "count": 0,
+        "rate": 0
+      },
+      "thresholds": {
+        "count==0": {
+          "ok": true
+        }
+      }
+    },
+    "http_req_duration{expected_response:true}": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "min": 0,
+        "med": 2.3239,
+        "max": 162.5635,
+        "p(90)": 3.8798,
+        "p(95)": 4.2965,
+        "p(99)": 5.042070000000001,
+        "avg": 2.46153151501629
+      }
+    },
+    "http_req_waiting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "med": 2.2385,
+        "max": 162.04,
+        "p(90)": 3.8241,
+        "p(95)": 4.2136,
+        "p(99)": 5.0019,
+        "avg": 2.3819232694445294,
+        "min": 0
+      }
+    },
+    "http_req_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 2.46153151501629,
+        "min": 0,
+        "med": 2.3239,
+        "max": 162.5635,
+        "p(90)": 3.8798,
+        "p(95)": 4.2965,
+        "p(99)": 5.042070000000001
+      }
+    },
+    "iteration_duration": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 162.5635,
+        "p(90)": 4.1223,
+        "p(95)": 4.5204,
+        "p(99)": 5.358240000000002,
+        "avg": 2.748232893415931,
+        "min": 0,
+        "med": 2.6259
+      }
+    },
+    "http_req_blocked": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0.0017233817026528163,
+        "min": 0,
+        "med": 0,
+        "max": 1.6065,
+        "p(90)": 0
+      }
+    },
+    "http_req_tls_handshaking": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "max": 0,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0,
+        "avg": 0,
+        "min": 0,
+        "med": 0
+      }
+    },
+    "data_sent": {
+      "type": "counter",
+      "contains": "data",
+      "values": {
+        "rate": 356676.7337517084,
+        "count": 64202061
+      }
+    },
+    "vus_max": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 10,
+        "min": 10,
+        "max": 10
+      }
+    },
+    "http_req_connecting": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "avg": 0.000010169070740579497,
+        "min": 0,
+        "med": 0,
+        "max": 1.2034,
+        "p(90)": 0,
+        "p(95)": 0,
+        "p(99)": 0
+      }
+    },
+    "checks": {
+      "type": "rate",
+      "contains": "default",
+      "values": {
+        "fails": 0,
+        "rate": 1,
+        "passes": 1111724
+      }
+    },
+    "http_req_receiving": {
+      "type": "trend",
+      "contains": "time",
+      "values": {
+        "p(95)": 0.60685,
+        "p(99)": 0.9921,
+        "avg": 0.0719492737406051,
+        "min": 0,
+        "med": 0,
+        "max": 2.0098,
+        "p(90)": 0.3858
+      }
+    },
+    "vus": {
+      "type": "gauge",
+      "contains": "default",
+      "values": {
+        "value": 1,
+        "min": 1,
+        "max": 10
+      }
+    }
+  },
+  "root_group": {
+    "name": "",
+    "path": "",
+    "id": "d41d8cd98f00b204e9800998ecf8427e",
+    "groups": [],
+    "checks": [
+        {
+          "name": "availability returns HTTP 200",
+          "path": "::availability returns HTTP 200",
+          "id": "c361cb066ff3953ee8d4314314eba1db",
+          "passes": 277931,
+          "fails": 0
+        },
+        {
+          "fails": 0,
+          "name": "availability response has data array",
+          "path": "::availability response has data array",
+          "id": "bf8a6b3009717e399c11062cbde3ab3b",
+          "passes": 277931
+        },
+        {
+          "name": "availability response has requestId",
+          "path": "::availability response has requestId",
+          "id": "976ba8ae43f398e60611c9a5f5eca916",
+          "passes": 277931,
+          "fails": 0
+        },
+        {
+          "id": "29a416362ee786836fb1fd5b91edc829",
+          "passes": 277931,
+          "fails": 0,
+          "name": "availability has exact fixture slots and values",
+          "path": "::availability has exact fixture slots and values"
+        }
+      ]
+  },
+  "options": {
+    "summaryTrendStats": [
+      "avg",
+      "min",
+      "med",
+      "max",
+      "p(90)",
+      "p(95)",
+      "p(99)"
+    ],
+    "summaryTimeUnit": "",
+    "noColor": false
+  },
+  "state": {
+    "isStdOutTTY": false,
+    "isStdErrTTY": false,
+    "testRunDurationMs": 180000.6979
+  }
+}
+running (3m00.0s), 00/10 VUs, 277931 complete and 0 interrupted iterations
+availability ✓ [ 100% ] 00/10 VUs  3m0s
+DO
+BEGIN
+                      set_config                       |              set_config              |              set_config              |              set_config              | set_config |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              |              set_config              
+-------------------------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------+--------------------------------------
+ kan81-performance-KAN-85-baseline-20261106-112650-493 | 92e90a5b-1e44-4eff-88fe-def52f5ecf48 | 3bc6dcfb-df92-4ea6-8cd3-24a5550cec15 | 35a53531-5446-4790-b969-5448f1bd0dc7 | 2026-11-14 | d010ce88-f90e-4c76-8822-aebde0c18bd5 | 48a14cd1-a8c7-488c-ac42-ce6f3a8357ae | b87260ba-fe80-40db-9cb0-c4350ff44f38 | 80ae42ca-dce8-499f-843a-f1776b8e2c24 | adf7086b-d259-4c02-b644-062371289a62 | 0c63b3e2-56b0-463c-9702-2e6bab523bae | 4d304cc0-df23-476f-9c45-8439a6a17bd0 | c50e5782-72f6-4c05-9927-09b040bd12a7 | 2b08e719-b0e0-4b19-9659-cb667aac3c42 | dc5f85b5-a85d-4346-af35-7ea70916d635 | af19d6cb-5691-4576-9696-d66fbd86d0a4 | e436069a-d71b-4a60-b6d9-348c1f52ae7b
+(1 row)
+
+DO
+DELETE 12
+DELETE 1
+DELETE 1
+DELETE 1
+COMMIT

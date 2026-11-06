@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-11-06T10:58:14.3654366+05:30",
+  "command": "npm test -- --coverage",
+  "workingDirectory": "C:\\Users\\mohit\\OneDrive\\Desktop\\sem 7\\CS455\\Entire working\\backend",
+  "expectedDatabase": "campus_duo_test",
+  "identities": [
+    "application=campus_duo_test|campus_duo_app",
+    "migrator=campus_duo_test|campus_duo_migrator"
+  ],
+  "exitCode": 0,
+  "testLogPath": "C:\\Users\\mohit\\OneDrive\\Desktop\\sem 7\\CS455\\Entire working\\required docs\\deliverable-3\\evidence\\backend-tests\\current-full-suite-20261106-105802\\vitest-output.txt",
+  "coveragePath": "C:\\Users\\mohit\\OneDrive\\Desktop\\sem 7\\CS455\\Entire working\\required docs\\deliverable-3\\evidence\\backend-coverage\\current-full-suite-20261106-105802",
+  "nativeCoveragePath": "C:\\Users\\mohit\\OneDrive\\Desktop\\sem 7\\CS455\\Entire working\\backend\\coverage"
+}
