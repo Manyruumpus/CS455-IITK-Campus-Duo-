@@ -23,13 +23,34 @@ const TEST_SLOT_2 = '00000000-0000-0000-0000-00000000E002';
 const TEST_DATE_3 = '2026-12-03';
 const TEST_SLOT_3 = '00000000-0000-0000-0000-00000000E003';
 
+const TEST_DATE_4 = '2026-12-04';
+const TEST_SLOT_4 = '00000000-0000-0000-0000-00000000E004';
+const originalTestEnvironment = {
+  nodeEnv: process.env.NODE_ENV,
+  allowTestHarnessAuth: process.env.ALLOW_TEST_HARNESS_AUTH
+};
+
+function restoreTestEnvironment(): void {
+  if (originalTestEnvironment.nodeEnv === undefined) {
+    delete process.env.NODE_ENV;
+  } else {
+    process.env.NODE_ENV = originalTestEnvironment.nodeEnv;
+  }
+  if (originalTestEnvironment.allowTestHarnessAuth === undefined) {
+    delete process.env.ALLOW_TEST_HARNESS_AUTH;
+  } else {
+    process.env.ALLOW_TEST_HARNESS_AUTH = originalTestEnvironment.allowTestHarnessAuth;
+  }
+}
+
 describe('POST /api/booking — Vertical Slice Integration Suite', () => {
   beforeAll(async () => {
     // Clean up any stale test records from previous runs
     await cleanupTestData(['test-booking-%', 'test-rollback-%'], [
       TEST_SLOT_1,
       TEST_SLOT_2,
-      TEST_SLOT_3
+      TEST_SLOT_3,
+      TEST_SLOT_4
     ]);
 
     // Set up test slots using migrator role
@@ -62,6 +83,16 @@ describe('POST /api/booking — Vertical Slice Integration Suite', () => {
       endTime: '15:00:00',
       zone: 'COLLABORATIVE_STUDY'
     });
+
+    await setupTestSlot({
+      slotId: TEST_SLOT_4,
+      tableId: SEED_TABLE_ID,
+      locationId: SEED_LOCATION_ID,
+      localDate: TEST_DATE_4,
+      startTime: '15:00:00',
+      endTime: '17:00:00',
+      zone: 'COLLABORATIVE_STUDY'
+    });
   });
 
   beforeEach(() => {
@@ -70,13 +101,39 @@ describe('POST /api/booking — Vertical Slice Integration Suite', () => {
   });
 
   afterAll(async () => {
-    await cleanupTestData(['test-booking-%', 'test-rollback-%'], [
-      TEST_SLOT_1,
-      TEST_SLOT_2,
-      TEST_SLOT_3
-    ]);
-    await closeDbPool();
-    await closeMigratorPool();
+    const failures: unknown[] = [];
+    try {
+      await cleanupTestData(['test-booking-%', 'test-rollback-%'], [
+        TEST_SLOT_1,
+        TEST_SLOT_2,
+        TEST_SLOT_3,
+        TEST_SLOT_4
+      ]);
+    } catch (error) {
+      failures.push(error);
+    }
+    try {
+      await closeDbPool();
+    } catch (error) {
+      failures.push(error);
+    }
+    try {
+      await closeMigratorPool();
+    } catch (error) {
+      failures.push(error);
+    }
+    try {
+      restoreTestEnvironment();
+    } catch (error) {
+      failures.push(error);
+    }
+
+    if (failures.length === 1) {
+      throw failures[0];
+    }
+    if (failures.length > 1) {
+      throw new AggregateError(failures, 'Booking test cleanup failed');
+    }
   });
 
   describe('1. Valid Booking Success and Persisted Rows Verification', () => {
@@ -353,7 +410,76 @@ describe('POST /api/booking — Vertical Slice Integration Suite', () => {
     });
   });
 
-  describe('3. Transaction Rollback on Failure', () => {
+  describe('3. Audit Metadata Integrity', () => {
+    it('persists allowlisted audit metadata, correlates the generated request ID, and does not duplicate on replay', async () => {
+      const operationId = 'test-booking-audit-integrity';
+      const payload = {
+        clientOperationId: operationId,
+        tableId: SEED_TABLE_ID,
+        locationId: SEED_LOCATION_ID,
+        localDate: TEST_DATE_4,
+        slotId: TEST_SLOT_4,
+        companionStudentId: SAM_ID
+      };
+
+      const created = await request(app)
+        .post('/api/booking')
+        .set('X-Campus-Duo-Test-Actor', ALEX_ID)
+        .send(payload);
+
+      expect(created.status).toBe(201);
+      expect(created.body.requestId).toMatch(/^req-[0-9a-f-]{36}$/);
+      const bookingId = created.body.data.bookingId;
+
+      const audit = await getMigratorPool().query(
+        `SELECT actor_user_id, actor_role, action, target_type, target_id,
+                outcome, correlation_id, operation_id, safe_reason, details
+           FROM campus_duo.audit_event
+          WHERE target_id = $1::uuid
+            AND operation_id = $2`,
+        [bookingId, operationId]
+      );
+
+      expect(audit.rows).toHaveLength(1);
+      expect(audit.rows[0]).toEqual({
+        actor_user_id: ALEX_ID.toLowerCase(),
+        actor_role: 'ROLE_STUDENT',
+        action: 'BOOKING_CREATED',
+        target_type: 'BOOKING',
+        target_id: bookingId,
+        outcome: 'SUCCESS',
+        correlation_id: created.body.requestId,
+        operation_id: operationId,
+        safe_reason: 'Study table reservation confirmed',
+        details: null
+      });
+
+      const replay = await request(app)
+        .post('/api/booking')
+        .set('X-Campus-Duo-Test-Actor', ALEX_ID)
+        .send(payload);
+
+      expect(replay.status).toBe(200);
+      expect(replay.body.requestId).toMatch(/^req-[0-9a-f-]{36}$/);
+      expect(replay.body.requestId).not.toBe(created.body.requestId);
+      expect(replay.body.data.bookingId).toBe(bookingId);
+
+      const replayAudit = await getMigratorPool().query(
+        `SELECT actor_user_id, actor_role, action, target_type, target_id,
+                outcome, correlation_id, operation_id, safe_reason, details
+           FROM campus_duo.audit_event
+          WHERE target_id = $1::uuid
+            AND operation_id = $2`,
+        [bookingId, operationId]
+      );
+      expect(replayAudit.rows).toHaveLength(1);
+      expect(replayAudit.rows[0]).toEqual(audit.rows[0]);
+      expect(replayAudit.rows[0].correlation_id).toBe(created.body.requestId);
+      expect(replayAudit.rows[0].correlation_id).not.toBe(replay.body.requestId);
+    });
+  });
+
+  describe('4. Transaction Rollback on Failure', () => {
     it('rolls back all writes completely if a failure occurs during transaction execution', async () => {
       const opId = 'test-rollback-failure-op';
 

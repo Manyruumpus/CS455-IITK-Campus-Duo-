@@ -43,6 +43,11 @@
 
 ## 4. Stage 11A Evidence-Based Coverage Audit
 
+The current full frontend checkpoint is **17 files and 182 tests passed** on
+6 November 2026, with typecheck, lint, and production build also passing.
+The stage-specific totals below remain historical counts for their original
+checkpoints and are not the current aggregate.
+
 The audit distinguishes route rendering from service wiring and test evidence. “Mock complete” means the in-memory adapter and frontend behavior are implemented; it does not mean a production backend exists.
 
 | Capability | User action and states audited | Permission rule | Mock/test evidence | Production dependency or gap |

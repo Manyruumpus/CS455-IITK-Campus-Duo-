@@ -1,0 +1,22 @@
+{
+  "ownershipId": "kan81-performance-KAN-85-smoke-20261106-111150-461",
+  "actorId": "15dfa2aa-b9f2-46ed-90b7-21440f31ce4f",
+  "locationId": "fdeb72d6-f72c-4df8-ade0-1a89f5b077ee",
+  "tableId": "1c6a7e4d-9e95-4f3d-a474-f01056da6767",
+  "slotIds": [
+    "9564598b-7c3a-401f-880e-4ac458a8b6de",
+    "40eeca9e-b983-4297-b28c-bbd86fe86386",
+    "871ac9b0-99ea-4063-9dbc-c68698b2a080",
+    "845146a8-0880-48ae-bcf7-5723fbea64a1",
+    "d14e4254-10e1-4834-92a8-6f6228f491d3",
+    "3f9d9307-b654-4004-abbe-09728bdd634a",
+    "d5b71e09-e6d8-4ba9-83a8-f97da6bed210",
+    "7e2071f3-1f66-4de6-87c3-3ae1c0bb42ae",
+    "b4184254-e4c3-4cb4-9139-1e8d3a0cbc20",
+    "1c1281aa-625d-40fc-a36b-6e5b9106b7af",
+    "546b629d-2d22-4988-954d-fe2b4f898359",
+    "10131f5a-1646-4c2f-aa26-7559b23aab69"
+  ],
+  "testDate": "2026-11-14",
+  "database": "campus_duo_perf_20261103"
+}

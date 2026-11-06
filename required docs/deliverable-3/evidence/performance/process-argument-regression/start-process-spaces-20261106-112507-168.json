@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-11-06T11:25:07.2432688+05:30",
+  "node": "C:\\Program Files\\nodejs\\node.exe",
+  "nodeScript": "C:\\Users\\mohit\\AppData\\Local\\Temp\\Campus Duo argument regression 50a6dd9a-3eaa-49b3-97ca-ae3f00c26e71\\echo-arguments.js",
+  "expectedArguments": [
+    "--alpha",
+    "value with spaces",
+    "--beta",
+    "second value"
+  ],
+  "actualArguments": [
+    "--alpha",
+    "value with spaces",
+    "--beta",
+    "second value"
+  ],
+  "result": "PASS",
+  "regression": "Start-Process preserves a Node script path and arguments containing spaces when explicitly quoted."
+}

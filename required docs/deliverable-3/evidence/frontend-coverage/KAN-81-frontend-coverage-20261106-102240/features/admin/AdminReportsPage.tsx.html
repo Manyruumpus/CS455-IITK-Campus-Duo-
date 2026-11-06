@@ -1,0 +1,220 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for features/admin/AdminReportsPage.tsx</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../../index.html">All files</a> / <a href="index.html">features/admin</a> AdminReportsPage.tsx</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">5% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>1/20</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/18</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/10</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">6.25% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>1/16</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React, { useState } from 'react';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { TableWrapper } from '@/components/ui/TableWrapper';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Dialog } from '@/components/ui/Dialog';
+import { useAdminReports, useResolveAdminReport } from '@/queries/adminHooks';
+&nbsp;
+export const AdminReportsPage: React.FC = <span class="fstat-no" title="function not covered" >() =&gt; {</span>
+  const <span class="cstat-no" title="statement not covered" >query = useAdminReports();</span>
+  const <span class="cstat-no" title="statement not covered" >resolve = useResolveAdminReport();</span>
+  const [selected, setSelected<span class="cstat-no" title="statement not covered" >] = useState&lt;string | null&gt;(null);</span>
+  const [action, setAction<span class="cstat-no" title="statement not covered" >] = useState&lt;'DISMISS' | 'WARN_USER' | 'SUSPEND_USER'&gt;('DISMISS');</span>
+  const [reason, setReason<span class="cstat-no" title="statement not covered" >] = useState('');</span>
+  const report = <span class="cstat-no" title="statement not covered" >query.data?.find(<span class="fstat-no" title="function not covered" >(i</span>tem) =&gt; <span class="cstat-no" title="statement not covered" >item.reportId === selected)</span>;</span>
+<span class="cstat-no" title="statement not covered" >  return &lt;div className="space-y-6"&gt;</span>
+    &lt;PageHeader title="Moderation Queue" subtitle="Admin-only report review. Resolving a report does not automatically penalize its target." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reports', isCurrent: true }]} /&gt;
+    {query.isError &amp;&amp; &lt;p role="alert" className="text-sm text-red-300"&gt;{query.error.message}&lt;/p&gt;}
+    &lt;TableWrapper caption="Pending and resolved moderation reports"&gt;
+      &lt;thead&gt;&lt;tr&gt;&lt;th className="p-3"&gt;Report&lt;/th&gt;&lt;th className="p-3"&gt;Reported user&lt;/th&gt;&lt;th className="p-3"&gt;Category&lt;/th&gt;&lt;th className="p-3"&gt;Description&lt;/th&gt;&lt;th className="p-3"&gt;Status&lt;/th&gt;&lt;th className="p-3"&gt;Action&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+      &lt;tbody className="divide-y divide-craft-border/60"&gt;{query.data?.map(<span class="fstat-no" title="function not covered" >(i</span>tem) =&gt; <span class="cstat-no" title="statement not covered" >&lt;tr key={item.reportId}&gt;</span>
+        &lt;td className="p-3 font-mono text-amber-400"&gt;{item.reportId}&lt;/td&gt;&lt;td className="p-3"&gt;{item.reportedUserName}&lt;/td&gt;&lt;td className="p-3"&gt;&lt;Badge variant="warning"&gt;{item.category}&lt;/Badge&gt;&lt;/td&gt;
+        &lt;td className="p-3 text-craft-muted max-w-xs"&gt;{item.description || 'No description supplied'}&lt;/td&gt;&lt;td className="p-3"&gt;&lt;Badge variant={item.status === 'PENDING_REVIEW' ? 'warning' : 'outline'}&gt;{item.status}&lt;/Badge&gt;&lt;/td&gt;
+        &lt;td className="p-3"&gt;{item.status === 'PENDING_REVIEW' ? &lt;Button variant="outline" size="sm" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(item.reportId)}&gt;R</span>eview&lt;/Button&gt; : '—'}&lt;/td&gt;
+      &lt;/tr&gt;)}&lt;/tbody&gt;
+    &lt;/TableWrapper&gt;
+    &lt;Dialog isOpen={!!selected} onClose={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(null)} t</span>itle="Resolve moderation report" description={report ? `Review ${report.reportId}. Reporter identity and confidential notes remain restricted to this admin view.` : ''} footer={&lt;&gt;
+      &lt;Button variant="outline" size="sm" onClick={<span class="fstat-no" title="function not covered" >() =&gt; <span class="cstat-no" title="statement not covered" >s</span>etSelected(null)} d</span>isabled={resolve.isPending}&gt;Cancel&lt;/Button&gt;
+      &lt;Button variant="danger" size="sm" isLoading={resolve.isPending} disabled={!reason.trim() || resolve.isPending} onClick={<span class="fstat-no" title="function not covered" >() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >        if (!selected || !reason.trim()) <span class="cstat-no" title="statement not covered" >return;</span></span>
+<span class="cstat-no" title="statement not covered" >        resolve.mutate({ reportId: selected, action, reason, confirm: true }, { onSuccess: <span class="fstat-no" title="function not covered" >() =&gt; {</span> <span class="cstat-no" title="statement not covered" >setSelected(null); <span class="cstat-no" title="statement not covered" >s</span>etReason(''); }</span> });</span>
+      }}&gt;Confirm resolution&lt;/Button&gt;
+    &lt;/&gt;}&gt;
+      &lt;div className="space-y-2"&gt;
+        &lt;label className="text-xs" htmlFor="admin-report-action"&gt;Outcome&lt;/label&gt;
+        &lt;select id="admin-report-action" value={action} onChange={<span class="fstat-no" title="function not covered" >(e</span>vent) =&gt; <span class="cstat-no" title="statement not covered" >setAction(event.target.value as typeof action)} c</span>lassName="w-full bg-craft-base border border-craft-border rounded px-2 py-1 text-xs"&gt;
+          &lt;option value="DISMISS"&gt;Dismiss report&lt;/option&gt;&lt;option value="WARN_USER"&gt;Record warning (demo report outcome only)&lt;/option&gt;&lt;option value="SUSPEND_USER"&gt;Record suspension recommendation (pending policy; does not suspend account)&lt;/option&gt;
+        &lt;/select&gt;
+        &lt;label className="text-xs" htmlFor="admin-report-reason"&gt;Required reason&lt;/label&gt;
+        &lt;textarea id="admin-report-reason" value={reason} onChange={<span class="fstat-no" title="function not covered" >(e</span>vent) =&gt; <span class="cstat-no" title="statement not covered" >setReason(event.target.value)} m</span>axLength={500} className="w-full bg-craft-base border border-craft-border rounded px-2 py-1 text-xs" /&gt;
+        {resolve.isError &amp;&amp; &lt;p role="alert" className="text-xs text-red-300"&gt;{resolve.error.message}&lt;/p&gt;}
+      &lt;/div&gt;
+    &lt;/Dialog&gt;
+  &lt;/div&gt;;
+};
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-11-06T04:52:50.804Z
+            </div>
+        <script src="../../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../../sorter.js"></script>
+        <script src="../../block-navigation.js"></script>
+    </body>
+</html>
+    

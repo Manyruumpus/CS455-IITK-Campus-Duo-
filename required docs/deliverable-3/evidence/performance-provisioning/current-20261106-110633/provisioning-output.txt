@@ -1,0 +1,18 @@
+Migration directory: C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\database\migrations
+Discovered versioned migrations (8):
+  V001__schema_conventions.sql
+  V002__identity_and_profiles.sql
+  V003__consent_connections_and_blocks.sql
+  V004__study_inventory.sql
+  V005__bookings_and_idempotency.sql
+  V006__moderation_notifications_and_audit.sql
+  V007__transactional_outbox.sql
+  V008__runtime_access_privileges.sql
+Target/configuration identity (credentials omitted):
+  database=campus_duo_perf_20261103
+  migrationDirectory=C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\database\migrations
+  flywayConfig=C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working\database\config\flyway.toml
+  targetUrl=jdbc:postgresql://127.0.0.1:5432/campus_duo_perf_20261103
+  flywayUser=campus_duo_migrator
+  schema=campus_duo
+  callerWorkingDirectory=C:\Users\mohit\OneDrive\Desktop\sem 7\CS455\Entire working

@@ -110,4 +110,8 @@ node .\node_modules\vitest\vitest.mjs run tests/booking.test.ts
 node .\node_modules\vitest\vitest.mjs run tests/concurrency.race.test.ts
 ```
 
-All 25 tests execute against the live PostgreSQL database instance on `localhost:5432/campus_duo_dev` using `campus_duo_app`.
+The original Deliverable 2 checkpoint covered 25 tests against
+`localhost:5432/campus_duo_dev`. The current Deliverable 3 test configuration
+uses the explicitly isolated `campus_duo_test` database for database-backed
+tests; the current full suite requires `CAMPUS_DUO_MIGRATOR_PASSWORD` and was
+not rerun successfully in the 6 November 2026 checkpoint.

@@ -35,3 +35,7 @@ Desktop.ini
 /frontend/playwright-report/
 __pycache__/
 *.pyc
+
+/backend/dist/
+
+/backend/coverage/

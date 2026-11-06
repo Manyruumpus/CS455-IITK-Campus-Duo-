@@ -4,6 +4,13 @@ import { getEnvConfig } from '../src/config/env';
 let migratorPool: Pool | null = null;
 
 export function getMigratorPool(): Pool {
+  const password = process.env.CAMPUS_DUO_MIGRATOR_PASSWORD;
+  if (!password) {
+    throw new Error(
+      'CAMPUS_DUO_MIGRATOR_PASSWORD is required for test database writes'
+    );
+  }
+
   if (!migratorPool) {
     const config = getEnvConfig();
     migratorPool = new Pool({
@@ -11,10 +18,22 @@ export function getMigratorPool(): Pool {
       port: config.db.port,
       database: config.db.database,
       user: 'campus_duo_migrator',
-      password: process.env.CAMPUS_DUO_MIGRATOR_PASSWORD || 'cs455'
+      password
     });
   }
+
   return migratorPool;
+}
+
+async function assertTestDatabase(client: PoolClient): Promise<void> {
+  const result = await client.query<{ database_name: string }>(
+    'SELECT current_database() AS database_name'
+  );
+  if (result.rows[0]?.database_name !== 'campus_duo_test') {
+    throw new Error(
+      `Test data helper requires database campus_duo_test; refusing connected database ${result.rows[0]?.database_name ?? 'unknown'}`
+    );
+  }
 }
 
 export async function closeMigratorPool(): Promise<void> {
@@ -33,25 +52,30 @@ export async function setupTestSlot(params: {
   endTime: string;
   zone: string;
 }): Promise<void> {
-  const pool = getMigratorPool();
-  await pool.query(
-    `INSERT INTO campus_duo.study_slot (
-      slot_id, table_id, location_id, local_date, start_time, end_time, zone, status, active
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'AVAILABLE', true)
-    ON CONFLICT (slot_id) DO UPDATE
-      SET local_date = EXCLUDED.local_date,
-          status = 'AVAILABLE',
-          active = true;`,
-    [
-      params.slotId,
-      params.tableId,
-      params.locationId,
-      params.localDate,
-      params.startTime,
-      params.endTime,
-      params.zone
-    ]
-  );
+  const client = await getMigratorPool().connect();
+  try {
+    await assertTestDatabase(client);
+    await client.query(
+      `INSERT INTO campus_duo.study_slot (
+        slot_id, table_id, location_id, local_date, start_time, end_time, zone, status, active
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'AVAILABLE', true)
+      ON CONFLICT (slot_id) DO UPDATE
+        SET local_date = EXCLUDED.local_date,
+            status = 'AVAILABLE',
+            active = true;`,
+      [
+        params.slotId,
+        params.tableId,
+        params.locationId,
+        params.localDate,
+        params.startTime,
+        params.endTime,
+        params.zone
+      ]
+    );
+  } finally {
+    client.release();
+  }
 }
 
 export interface CleanupOptions {
@@ -81,6 +105,7 @@ export async function cleanupTestData(
   const client = await pool.connect();
 
   try {
+    await assertTestDatabase(client);
     await client.query('BEGIN;');
 
     const bookingIds = new Set<string>();
