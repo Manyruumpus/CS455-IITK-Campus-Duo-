@@ -5,8 +5,13 @@ import { closeDbPool } from './config/db';
 const config = getEnvConfig();
 const app = createApp();
 
-const server = app.listen(config.port, () => {
-  console.log(`Campus Duo booking server running on port ${config.port} (${config.nodeEnv})`);
+const loopbackHosts = new Set(['127.0.0.1', '::1', 'localhost']);
+if (config.allowTestHarnessAuth && !loopbackHosts.has(config.host.toLowerCase())) {
+  throw new Error('ALLOW_TEST_HARNESS_AUTH requires a loopback HOST (127.0.0.1, ::1, or localhost)');
+}
+
+const server = app.listen(config.port, config.host, () => {
+  console.log(`Campus Duo booking server running on ${config.host}:${config.port} (${config.nodeEnv})`);
 });
 
 async function handleShutdown(signal: string): Promise<void> {

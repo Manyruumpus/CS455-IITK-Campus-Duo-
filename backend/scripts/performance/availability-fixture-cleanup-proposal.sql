@@ -1,0 +1,16 @@
+-- NOT FOR EXECUTION.
+-- This is a review-only cleanup proposal for a reconciled, owned fixture.
+-- Explicit approval is required after Invoke-Reconcile-AvailabilityFixture.ps1
+-- reports the intended target and every ownership predicate as true.
+--
+-- Required order after reconciliation, inside one transaction:
+-- 1. Delete dependent booking_participant rows for explicitly identified
+--    fixture-owned booking IDs.
+-- 2. Delete explicitly identified fixture-owned booking rows.
+-- 3. Delete the 12 exact fixture study_slot IDs.
+-- 4. Delete the exact fixture study_table ID.
+-- 5. Delete the exact fixture study_location ID.
+-- 6. Delete the exact fixture actor user_account row.
+--
+-- No CASCADE, LIKE, prefix matching, broad ownership search, grants,
+-- migrations, or unrelated rows are permitted.
