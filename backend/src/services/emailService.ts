@@ -137,6 +137,48 @@ export class EmailService {
     }
 
     const env = getEnvConfig();
+        if (process.env.EMAIL_TRANSPORT === 'resend') {
+      const apiKey = process.env.RESEND_API_KEY?.trim();
+      const from = process.env.EMAIL_FROM?.trim();
+
+      if (!apiKey || !from) {
+        throw new Error('Resend requires RESEND_API_KEY and EMAIL_FROM.');
+      }
+
+      this.transport = {
+        async sendMail(message: EmailMessage): Promise<void> {
+          try {
+            const response = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                from,
+                to: [message.to],
+                subject: message.subject,
+                text: message.text,
+                html: message.html,
+              }),
+              signal: AbortSignal.timeout(10000),
+            });
+
+            if (response.ok) return;
+            console.error(`[EmailTransport:Resend] Request failed with HTTP ${response.status}`);
+          } catch {
+            console.error('[EmailTransport:Resend] Could not reach Resend.');
+          }
+
+          throw new DomainError(
+            'SERVICE_UNAVAILABLE',
+            503,
+            'Email delivery failed. Please try again later.'
+          );
+        },
+      };
+      return;
+    }
 
     // 1. Explicit SMTP configuration or EMAIL_TRANSPORT=smtp
     if (env.emailTransport === 'smtp' || (env.smtp.host && env.emailTransport !== 'inmemory')) {
