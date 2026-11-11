@@ -218,7 +218,7 @@ export const StudentDashboardPage: React.FC = () => {
               </CardTitle>
               {topMatch && (
                 <Badge variant="ember">
-                  {topMatch.aiMatchScore}% Match
+                  {topMatch.aiMatchScore}% Match (Demo)
                 </Badge>
               )}
             </div>
@@ -274,7 +274,7 @@ export const StudentDashboardPage: React.FC = () => {
           <CardFooter>
             <span className="text-[11px] text-craft-muted">
               {topMatch?.compatibilityBreakdown?.isNearTied ? 'Near-tied candidate. ' : ''}
-              Compatibility based on shared courses and study preferences.
+              Service-calculated demo match.
             </span>
             <Link to="/app/study" className="text-xs text-ember-400 hover:underline">
               Browse all partners →
@@ -308,6 +308,11 @@ export const StudentDashboardPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <p className="font-medium text-craft-ink">{loc.name}</p>
+                        {(loc.name.includes('[SYNTHETIC') || loc.name.includes('DEV SEED')) && (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-amber-950/30 text-amber-300 border-amber-500/40">
+                            Dev Seed
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-[11px] text-craft-muted">
                         {loc.noisePolicy === 'WHISPER_COLLAB'

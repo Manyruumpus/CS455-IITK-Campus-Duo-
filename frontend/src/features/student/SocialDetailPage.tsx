@@ -195,7 +195,7 @@ export const SocialDetailPage: React.FC = () => {
             </CardContent>
             <CardFooter>
               <span className="text-[11px] text-craft-muted">
-                Social profiles show shared interests without a compatibility score.
+                Demo-only. No numeric social compatibility score.
               </span>
             </CardFooter>
           </Card>
@@ -216,7 +216,7 @@ export const SocialDetailPage: React.FC = () => {
                 </div>
                 <p className="text-craft-ink font-semibold">Privacy-Protected (Not Disclosed)</p>
                 <p className="text-[11px] text-craft-muted leading-relaxed">
-                  Personal handles, phone numbers, and external messaging addresses are excluded from public social profiles.
+                  Per DEC-08, personal handles, phone numbers and external messaging addresses are completely excluded from public social profiles. Messaging is not implemented.
                 </p>
               </div>
             </CardContent>
@@ -284,7 +284,7 @@ export const SocialDetailPage: React.FC = () => {
               <CardContent className="p-4 text-xs space-y-1">
                 <p className="font-semibold text-emerald-400">Mutually Connected</p>
                 <p className="text-craft-muted">
-                  You and {profile.displayName} have mutually connected. No contact details are exchanged through Campus Duo.
+                  You and {profile.displayName} have mutually connected. No contact details are exchanged. Connection management is deferred to Stage 07.
                 </p>
               </CardContent>
             </Card>

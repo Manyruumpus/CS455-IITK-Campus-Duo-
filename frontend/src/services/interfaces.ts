@@ -148,7 +148,6 @@ export interface INotificationService {
 export interface IModerationService {
   reportUser(reportedUserId: string, category: string, description: string | undefined, context: ServiceContext): Promise<ReportReceipt>;
   blockUser(targetUserId: string, context: ServiceContext): Promise<{ blocked: boolean }>;
-  unblockUser(targetUserId: string, context: ServiceContext): Promise<{ blocked: boolean }>;
   listBlockedUsers(context: ServiceContext): Promise<string[]>;
   listMyReports(context: ServiceContext): Promise<ReportReceipt[]>;
 }

@@ -8,7 +8,6 @@ import bookingRouter from './routes/booking';
 import agentRouter from './routes/agent';
 import discoveryRouter from './routes/discovery';
 import profileRouter from './routes/profile';
-import moderationRouter from './routes/moderation';
 import { errorHandler } from './middleware/errorHandler';
 import { DomainError } from './types';
 
@@ -36,7 +35,6 @@ export function createApp(): express.Application {
   app.use('/api/agent', agentRouter);
   app.use('/api/discovery', discoveryRouter);
   app.use('/api/profile', profileRouter);
-  app.use('/api/moderation', moderationRouter);
 
   // 404 handler for unrecognized routes
   app.use((req: Request, res: Response, next: NextFunction) => {

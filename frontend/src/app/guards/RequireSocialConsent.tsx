@@ -45,14 +45,14 @@ export const RequireSocialConsent: React.FC<RequireSocialConsentProps> = ({ chil
             Activate Social Discovery Mode
           </h2>
           <p className="text-xs text-craft-muted leading-relaxed max-w-md mx-auto">
-            Social discovery is independent from academic study matching. Opt in when you are ready to make your public social profile discoverable.
+            Social networking is independent from academic study matching. Opting in requires an explicit action. In this demonstration, clicking activate grants provisional local consent.
           </p>
         </div>
 
         <div className="p-3.5 rounded-lg bg-craft-surface border border-craft-border text-left text-xs space-y-2 text-craft-muted">
           <div className="flex items-center gap-2 text-craft-ink font-medium">
             <Shield className="w-4 h-4 text-emerald-400" />
-            <span>What social consent means</span>
+            <span>Provisional Consent Policy (Under Review)</span>
           </div>
           <p className="text-[11px] leading-normal">
             • Your academic study profile remains fully active even if social discovery is disabled.
@@ -70,7 +70,7 @@ export const RequireSocialConsent: React.FC<RequireSocialConsentProps> = ({ chil
             isLoading={updateSocialConsent.isPending}
             rightIcon={<ArrowRight className="w-4 h-4" />}
           >
-            Enable Social Discovery
+            Activate Social Mode (Demo Action)
           </Button>
           <Link to="/app/settings">
             <Button variant="outline" leftIcon={<Settings className="w-3.5 h-3.5" />}>

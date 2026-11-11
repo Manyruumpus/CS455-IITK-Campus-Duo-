@@ -71,7 +71,7 @@ export class OllamaLlmClient implements ILlmClient {
             {
               role: 'system',
               content:
-                'Write one concise explanation per candidate using only the supplied score and grounded facts. Return only a JSON array of objects with candidateId and explanation fields. Use this exact style: "Score: <number>. <exact grounded fact>; <exact grounded fact>." Copy grounded fact phrases exactly; do not paraphrase, add adjectives, or mention any other words.',
+                'Write one concise explanation per candidate using only the supplied score and grounded facts. Return only a JSON array of objects with candidateId and explanation fields. In each explanation, mention only the score and the exact grounded facts supplied without adding ungrounded claims or extraneous commentary.',
             },
             {
               role: 'user',
@@ -80,9 +80,6 @@ export class OllamaLlmClient implements ILlmClient {
           ],
           stream: false,
           format: 'json',
-          options: {
-            temperature: 0,
-          },
         }),
         signal: controller.signal,
       });
@@ -124,8 +121,6 @@ export class OllamaLlmClient implements ILlmClient {
           entries = obj.candidates as Array<{ candidateId?: unknown; explanation?: unknown }>;
         } else if (Array.isArray(obj.explanations)) {
           entries = obj.explanations as Array<{ candidateId?: unknown; explanation?: unknown }>;
-        } else if (Array.isArray(obj.json_array)) {
-          entries = obj.json_array as Array<{ candidateId?: unknown; explanation?: unknown }>;
         } else {
           for (const [key, val] of Object.entries(obj)) {
             if (/^candidate_\d+$/i.test(key)) {

@@ -81,7 +81,6 @@ export class UnavailableServiceAdapter implements AppServices {
   public moderation = {
     reportUser: (_id: string, _c: string, _d: string, _context: ServiceContext) => unavailable<never>(),
     blockUser: (_id: string, _context: ServiceContext) => unavailable<never>(),
-    unblockUser: (_id: string, _context: ServiceContext) => unavailable<never>(),
     listBlockedUsers: (_context: ServiceContext) => unavailable<never>(),
     listMyReports: (_context: ServiceContext) => unavailable<never>(),
   };

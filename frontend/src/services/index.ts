@@ -18,16 +18,12 @@ import { HttpBookingAdapter } from './http/HttpBookingAdapter';
 import { HttpAdminAdapter } from './http/HttpAdminAdapter';
 import { HttpAgentAdapter } from './http/HttpAgentAdapter';
 import { HttpProfileAdapter } from './http/HttpProfileAdapter';
-import { HttpDiscoveryAdapter } from './http/HttpDiscoveryAdapter';
-import { HttpModerationAdapter } from './http/HttpModerationAdapter';
 
 export * from './interfaces';
 export * from './http/HttpBookingAdapter';
 export * from './http/HttpAdminAdapter';
 export * from './http/HttpAgentAdapter';
 export * from './http/HttpProfileAdapter';
-export * from './http/HttpDiscoveryAdapter';
-export * from './http/HttpModerationAdapter';
 
 export interface ServiceSelectionOptions {
   isDemoAuthEnabled?: boolean;
@@ -57,40 +53,26 @@ export function getAppServices(options?: ServiceSelectionOptions): AppServices {
   const bookingService = isLiveBooking ? new HttpBookingAdapter() : new MockBookingService();
   const adminService = isLiveBooking ? new HttpAdminAdapter() : new MockAdminService();
   const profileService = isLiveProfile ? new HttpProfileAdapter() : new MockProfileService();
-  const liveDiscovery = isLiveBooking ? new HttpDiscoveryAdapter() : undefined;
-  const liveModeration = isLiveBooking ? new HttpModerationAdapter() : undefined;
-
-  if (isLiveBooking || isLiveProfile) {
-    const unavailable = new UnavailableServiceAdapter();
-    const agent = new HttpAgentAdapter();
-    const liveStudy = liveDiscovery
-      ? liveDiscovery
-      : { ...unavailable.study, submitMatchingQuery: agent.submitMatchingQuery.bind(agent) };
-    const liveSocial = liveDiscovery
-      ? {
-          ...unavailable.social,
-          getSocialConsent: liveDiscovery.getSocialConsent.bind(liveDiscovery),
-          updateSocialConsent: liveDiscovery.updateSocialConsent.bind(liveDiscovery),
-        }
-      : unavailable.social;
-    return {
-      // Demo auth controls only the development login chooser; it must not
-      // switch live data services back to in-memory implementations.
-      auth: isDemoAuth ? new MockAuthService() : unavailable.auth,
-      profile: isLiveProfile ? profileService : unavailable.profile,
-      study: liveStudy,
-      social: liveSocial,
-      connection: liveDiscovery ?? unavailable.connection,
-      booking: isLiveBooking ? bookingService : unavailable.booking,
-      notification: unavailable.notification,
-      moderation: liveModeration ?? unavailable.moderation,
-      admin: isLiveBooking ? adminService : unavailable.admin,
-      conversation: unavailable.conversation,
-    };
-  }
 
   if (!isDemoAuth) {
-    return new UnavailableServiceAdapter();
+    const unavailable = new UnavailableServiceAdapter();
+    if (isLiveBooking || isLiveProfile) {
+      const agent = new HttpAgentAdapter();
+      const liveStudy = { ...unavailable.study, submitMatchingQuery: agent.submitMatchingQuery.bind(agent) };
+      return {
+        auth: unavailable.auth,
+        profile: isLiveProfile ? profileService : unavailable.profile,
+        study: liveStudy,
+        social: unavailable.social,
+        connection: unavailable.connection,
+        booking: bookingService,
+        notification: unavailable.notification,
+        moderation: unavailable.moderation,
+        admin: adminService,
+        conversation: unavailable.conversation,
+      };
+    }
+    return unavailable;
   }
 
   return {

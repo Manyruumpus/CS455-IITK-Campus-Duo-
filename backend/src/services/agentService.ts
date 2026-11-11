@@ -204,7 +204,6 @@ export class AgentService {
       'same', 'good', 'however', 'while', 'might', 'not', 'perfectly', 'could', 'create',
       'dynamic', 'making', 'who', 'but', 's', 'so', 'academic', 'goal', 'goals',
       'pace', 'style', 'class', 'ahead', 'standard', 'regular', 'focused', 'quiet', 'heavy', 'discussion',
-      'share', 'result', 'results', 'high', 'strong', 'excellent', 'same',
     ]);
     const promptVocabulary = userPrompt
       ? (userPrompt.toLowerCase().match(/[a-z0-9]+/g) || [])
@@ -264,9 +263,7 @@ export class AgentService {
   ): Promise<AgentMatchResult> {
     const queryId = crypto.randomUUID();
     const limit = options.limit || 10;
-    const requestedCourseValue = options.courseCode?.trim() || '';
-    const requestedCourse =
-      requestedCourseValue.toUpperCase() === 'ALL' ? null : requestedCourseValue || null;
+    const requestedCourse = options.courseCode?.trim() || null;
 
     // 1. Fetch viewer profile (checks active STUDY consent via 03_study_candidates.sql)
     const viewerProfile = await this.tool_get_viewer_profile(actor.userId);

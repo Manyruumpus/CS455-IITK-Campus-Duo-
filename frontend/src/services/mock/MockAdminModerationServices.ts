@@ -263,14 +263,6 @@ export class MockModerationService implements IModerationService {
     return Array.from(mockStore.blockedBy.get(actor.userId) ?? []);
   }
 
-  public async unblockUser(targetUserId: string, context: ServiceContext): Promise<{ blocked: boolean }> {
-    await scenarioManager.applyScenario(context.signal);
-    const actor = context.actorSession;
-    if (!actor) throw new AppError('UNAUTHENTICATED', 'Sign in required');
-    mockStore.blockedBy.get(actor.userId)?.delete(targetUserId);
-    return { blocked: false };
-  }
-
   public async listMyReports(context: ServiceContext): Promise<ReportReceipt[]> {
     await scenarioManager.applyScenario(context.signal);
     const actor = context.actorSession;

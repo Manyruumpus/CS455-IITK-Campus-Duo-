@@ -14,7 +14,7 @@ export const AdminBookingsPage: React.FC = () => {
   const query = useAdminBookings({ search, status: 'ALL' });
   const cancel = useAdminCancelBooking();
   return <div className="space-y-6">
-    <PageHeader title="Campus Study Table Reservations" subtitle="Review and manage current reservations." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reservations', isCurrent: true }]} />
+    <PageHeader title="Campus Study Table Reservations" subtitle="Admin oversight reuses canonical booking records and demo cancellation permissions." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Reservations', isCurrent: true }]} />
     <FilterBar searchQuery={search} onSearchChange={setSearch} searchPlaceholder="Search booking, student, or table..." onClearFilters={() => setSearch('')} />
     {query.isError && <p role="alert" className="text-sm text-red-300">{query.error.message}</p>}
     <TableWrapper caption="Service-backed booking oversight">
@@ -24,7 +24,7 @@ export const AdminBookingsPage: React.FC = () => {
         <td className="p-3">{booking.status === 'CONFIRMED' ? <Button variant="danger" size="sm" onClick={() => setSelected(booking.bookingId)}>Cancel</Button> : '—'}</td>
       </tr>)}</tbody>
     </TableWrapper>
-    <Dialog isOpen={!!selected} onClose={() => setSelected(null)} title="Cancel booking" description="Both participants are notified and the reason is recorded in the audit history." footer={<><Button variant="outline" size="sm" onClick={() => setSelected(null)}>Cancel</Button><Button variant="danger" size="sm" isLoading={cancel.isPending} disabled={!reason.trim() || cancel.isPending} onClick={() => { if (!selected || !reason.trim()) return; cancel.mutate({ bookingId: selected, reason, confirm: true }, { onSuccess: () => { setSelected(null); setReason(''); } }); }}>Confirm cancellation</Button></>}>
+    <Dialog isOpen={!!selected} onClose={() => setSelected(null)} title="Cancel booking" description="Both participants receive the existing deduplicated booking notification. The reason is recorded in the redacted mock audit." footer={<><Button variant="outline" size="sm" onClick={() => setSelected(null)}>Cancel</Button><Button variant="danger" size="sm" isLoading={cancel.isPending} disabled={!reason.trim() || cancel.isPending} onClick={() => { if (!selected || !reason.trim()) return; cancel.mutate({ bookingId: selected, reason, confirm: true }, { onSuccess: () => { setSelected(null); setReason(''); } }); }}>Confirm cancellation</Button></>}>
       <label htmlFor="booking-cancel-reason" className="text-xs font-semibold text-craft-muted uppercase tracking-wider">Required reason</label>
       <textarea
         id="booking-cancel-reason"

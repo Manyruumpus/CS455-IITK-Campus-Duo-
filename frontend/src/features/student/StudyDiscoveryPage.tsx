@@ -33,8 +33,10 @@ export const StudyDiscoveryPage: React.FC = () => {
   const { addToast } = useToast();
   const isLiveAssistantEnabled = appConfig.isLiveBookingEnabled || import.meta.env.VITE_USE_LIVE_BOOKING === 'true';
   const assistantModeDescription = isLiveAssistantEnabled
-    ? 'Recommendations use approved study profile data and course enrollment.'
-    : 'Compatibility recommendations are temporarily unavailable. Browse the study feed instead.';
+    ? 'Live backend recommendations are grounded in course enrollment and approved study profile data.'
+    : appConfig.isDemoAuthEnabled
+      ? 'Demo recommendations are generated from local sample profiles and study preferences.'
+      : 'The assistant is unavailable until the live backend is enabled.';
 
   // Filters state
   const [search, setSearch] = useState('');
@@ -296,7 +298,9 @@ export const StudyDiscoveryPage: React.FC = () => {
             )}
           </div>
           <div className="flex items-center gap-2 text-craft-subtle">
-            <span>Matching uses course, schedule, and study-style preferences.</span>
+            <span className="italic">Hall of Residence filter (Unsupported in Stage 05)</span>
+            <span className="inline-block w-1 h-1 rounded-full bg-craft-border" />
+            <span>Formula: 35C + 25T + 20P + 10L + 10G (Demo)</span>
           </div>
         </div>
       </Card>

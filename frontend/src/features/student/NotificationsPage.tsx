@@ -54,7 +54,7 @@ export const NotificationsPage: React.FC = () => {
     <div className="space-y-6">
       <PageHeader
         title="Activity Notifications"
-        subtitle="Updates about your connections, reservations, and account activity."
+        subtitle="Simulated in-memory alerts from committed demo service operations."
         breadcrumbs={[
           { label: 'Dashboard', href: '/app/dashboard' },
           { label: 'Notifications', isCurrent: true },

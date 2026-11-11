@@ -13,12 +13,12 @@ export const AuthRecoveryPage: React.FC = () => {
         </div>
         <CardTitle>Session Recovery</CardTitle>
         <CardDescription>
-          Your session needs to be renewed.
+          Authentication integration pending — session recovery simulation.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3 text-xs text-craft-muted leading-relaxed">
         <p>
-          Sign in again to restore access. Any information already saved to your account remains available.
+          Simulating recovery for an expired demonstration session. In future stages, when an authentication provider is connected, session expiration will handle non-destructive recovery to preserve user inputs.
         </p>
       </CardContent>
       <CardFooter className="flex justify-end gap-2">

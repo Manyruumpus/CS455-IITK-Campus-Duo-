@@ -215,12 +215,12 @@ export const LandingPage: React.FC = () => {
             Ready to explore Campus Duo?
           </h2>
           <p className="text-xs sm:text-sm text-craft-muted max-w-xl mx-auto leading-relaxed">
-            Sign in with your IIT Kanpur account to find study partners and reserve shared study space.
+            Sign in with the demonstration portal to test the student dashboard, study discovery cards, 2-person table grids, and administrative moderation tools.
           </p>
           <div className="pt-2 flex justify-center gap-3">
             <Link to="/login">
               <Button variant="ember" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Sign In to Campus Duo
+                Launch Demo Portal
               </Button>
             </Link>
           </div>
