@@ -19,19 +19,19 @@ export const AdminDashboardPage: React.FC = () => {
   ] as const;
   return (
     <div className="space-y-6">
-      <PageHeader title="Campus Administration Console" subtitle="Service-backed operational counts and governance controls." badge={<Badge variant="warning">Mock admin policy</Badge>} />
+      <PageHeader title="Campus Administration" subtitle="Operational overview and governance controls." badge={<Badge variant="warning">Administrator</Badge>} />
       {query.isError && <p role="alert" className="text-sm text-red-300">{query.error.message}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {metrics.map(([label, value, Icon]) => (
           <Card key={label} variant="default" className="p-4">
             <div className="flex items-center justify-between"><span className="text-xs text-craft-muted">{label}</span><Icon className="w-4 h-4 text-amber-400" /></div>
             <p className="text-2xl font-bold font-mono text-craft-ink mt-2">{value}</p>
-            <p className="text-[11px] text-craft-muted mt-1">Derived from current mock store</p>
+            <p className="text-[11px] text-craft-muted mt-1">Current system total</p>
           </Card>
         ))}
       </div>
       <Card variant="default">
-        <CardHeader><CardTitle>Administrative surfaces</CardTitle><CardDescription>All operations remain in-memory demonstration workflows; no durable governance claims.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Administration</CardTitle><CardDescription>Manage campus resources, reservations, reports, users, and audit history.</CardDescription></CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Link to="/admin/users"><Button variant="outline" size="sm">Users</Button></Link>
           <Link to="/admin/reports"><Button variant="outline" size="sm">Reports</Button></Link>

@@ -34,7 +34,7 @@ export const AdminReportsPage: React.FC = () => {
       <div className="space-y-2">
         <label className="text-xs" htmlFor="admin-report-action">Outcome</label>
         <select id="admin-report-action" value={action} onChange={(event) => setAction(event.target.value as typeof action)} className="w-full bg-craft-base border border-craft-border rounded px-2 py-1 text-xs">
-          <option value="DISMISS">Dismiss report</option><option value="WARN_USER">Record warning (demo report outcome only)</option><option value="SUSPEND_USER">Record suspension recommendation (pending policy; does not suspend account)</option>
+          <option value="DISMISS">Dismiss report</option><option value="WARN_USER">Record warning</option>          <option value="SUSPEND_USER">Suspend account</option>
         </select>
         <label className="text-xs" htmlFor="admin-report-reason">Required reason</label>
         <textarea id="admin-report-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={500} className="w-full bg-craft-base border border-craft-border rounded px-2 py-1 text-xs" />

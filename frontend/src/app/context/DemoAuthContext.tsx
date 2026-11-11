@@ -84,13 +84,14 @@ export const DemoAuthProvider: React.FC<DemoAuthProviderProps> = ({
   queryClient,
 }) => {
   const activeQueryClient = queryClient ?? applicationQueryClient;
-  // In production builds with demo auth disabled, initial session is forced to null
-  const effectiveInitialSession = isDemoAuthEnabled ? initialSession : null;
+  // Real backend sessions are valid in every build. The flag only controls
+  // browser-selected demo roles, never restoration of an authenticated user.
+  const effectiveInitialSession = initialSession;
   const [session, setSession] = useState<UserSession | null>(effectiveInitialSession);
   const [socialConsent, setSocialConsent] = useState<boolean>(initialSocialConsent);
   const [onboardingDraft, setOnboardingDraft] = useState<OnboardingDraftState | null>(null);
   const [restoreStatus, setRestoreStatus] = useState<SessionRestoreStatus>(() =>
-    isDemoAuthEnabled && !effectiveInitialSession && readPersistedAuthSession() ? 'restoring' : 'idle'
+    !effectiveInitialSession && readPersistedAuthSession() ? 'restoring' : 'idle'
   );
 
   const authClient = useMemo(() => new HttpAuthSessionClient(), []);
@@ -187,8 +188,9 @@ export const DemoAuthProvider: React.FC<DemoAuthProviderProps> = ({
   };
 
   const switchRole = (newRole: DemoAuthRole | UserSession) => {
-    // If demo auth is disabled (production default), ignore role switching
-    if (!isDemoAuthEnabled) {
+    // Real backend sessions are accepted in every build. The flag only gates
+    // browser-selected development identities.
+    if (typeof newRole !== 'object' && !isDemoAuthEnabled) {
       return;
     }
 
@@ -271,7 +273,7 @@ export const DemoAuthProvider: React.FC<DemoAuthProviderProps> = ({
     setSession(null);
     clearPersistedAuthSession();
     setRestoreStatus('idle');
-    if (token && isDemoAuthEnabled) {
+    if (token) {
       // Best effort server-side invalidation; failure leaves the token valid until its backend expiry.
       await authClient.logout(token);
     }

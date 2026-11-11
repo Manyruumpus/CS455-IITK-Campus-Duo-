@@ -69,4 +69,28 @@ router.put('/me', handleUpdateProfile);
 router.patch('/', handleUpdateProfile);
 router.patch('/me', handleUpdateProfile);
 
+router.put('/consent/:mode', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const actor = req.actor;
+    const mode = typeof req.params.mode === 'string' ? req.params.mode.toUpperCase() : '';
+    if (!actor || actor.role !== 'ROLE_STUDENT') {
+      throw new DomainError('FORBIDDEN', 403, 'Only students may change discovery consent.');
+    }
+    if (mode !== 'STUDY' && mode !== 'SOCIAL') {
+      throw new DomainError('VALIDATION_ERROR', 400, 'Consent mode must be STUDY or SOCIAL.');
+    }
+    if (typeof req.body?.hasConsent !== 'boolean') {
+      throw new DomainError('VALIDATION_ERROR', 400, 'hasConsent must be a boolean.');
+    }
+    const consent = await profileService.updateConsent(actor.userId, mode, req.body.hasConsent);
+    const response: ApiResponse<typeof consent> = {
+      data: consent,
+      requestId: req.requestId || 'req-unknown',
+    };
+    res.status(200).json(response);
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

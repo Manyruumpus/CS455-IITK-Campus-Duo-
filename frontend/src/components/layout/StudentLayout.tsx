@@ -266,7 +266,7 @@ export const StudentLayout: React.FC = () => {
                   }}
                   leftIcon={<LogOut className="w-3.5 h-3.5" />}
                 >
-                  Sign Out (Demo)
+                  Sign Out
                 </Button>
               </div>
             </div>

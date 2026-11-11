@@ -10,7 +10,6 @@ import {
   Check,
   X,
   Loader2,
-  ShieldAlert,
   MessageSquare,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -28,7 +27,6 @@ import {
   useReciprocateLike,
 } from '@/queries/connectionHooks';
 import { useToast } from '@/components/ui/Toast';
-import { appConfig } from '@/config/features';
 import { ConnectionViewBucket, ConnectionSummaryItem } from '@/types';
 
 type Tab = ConnectionViewBucket | 'ALL';
@@ -116,7 +114,9 @@ export const SocialConnectionsPage: React.FC = () => {
         }
       />
 
-      <DemoPolicyNotice />
+      <div className="p-3 rounded-xl border border-craft-border bg-craft-surface text-[11px] leading-relaxed text-craft-muted">
+        Social connections are separate from study-partner eligibility. Only mutual study connections can be used for table reservations.
+      </div>
 
       <div
         className="flex flex-wrap items-center gap-2 p-1 bg-craft-surface border border-craft-border rounded-lg w-fit"
@@ -189,7 +189,7 @@ export const SocialConnectionsPage: React.FC = () => {
           </CardTitle>
           <CardDescription>
             {activeTab === 'MUTUAL'
-              ? 'Bilateral social interest confirmed. Messaging is disabled by project policy (DEC-08).'
+              ? 'Bilateral social interest confirmed. Messaging is currently unavailable.'
               : activeTab === 'ALL'
               ? 'Mutual connections and one-sided social interests. Decline/Withdrawal/Disconnect are not implemented; only reciprocal LIKE forms a confirmed relationship.'
               : activeTab === 'INCOMING'
@@ -247,7 +247,7 @@ export const SocialConnectionsPage: React.FC = () => {
                     type: 'info',
                     title: 'Action Unavailable',
                     description:
-                      'Decline/Withdrawal/Disconnect is not implemented under the current demo policy. A confirmed relationship requires reciprocal LIKE.',
+                      'This action is not available for the current relationship. Reciprocal interest is required for a confirmed connection.',
                   })
                 }
                 onViewDetail={() => setDetailConnectionId(item.connectionId)}
@@ -276,23 +276,6 @@ export const SocialConnectionsPage: React.FC = () => {
     </div>
   );
 };
-
-const DemoPolicyNotice: React.FC = () => (
-  <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-950/10 text-[11px] leading-relaxed space-y-1">
-    <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
-      <ShieldAlert className="w-3.5 h-3.5" />
-      Demo-visible policy — not an approved production rule
-    </div>
-    <p className="text-craft-muted">
-      One-sided Like lists (Incoming / Outgoing) are visible in this demo only. SOCIAL-only connections
-      never enable study-booking eligibility. Messaging is{' '}
-      <Badge variant="mono">
-        {appConfig.isMessagingEnabled ? 'Preview (Mock)' : 'Disabled by default (DEC-08)'}
-      </Badge>
-      ; production messaging policy and handle-exchange decisions are still unresolved.
-    </p>
-  </div>
-);
 
 type ItemType = ConnectionSummaryItem;
 
@@ -358,7 +341,7 @@ const ConnectionCard: React.FC<ConnectionCardProps> = ({
               Privacy Protection:
             </span>
             <span className="text-[11px] text-craft-muted block">
-              Messaging is currently disabled by project policy (DEC-08). No contact handles disclosed.
+              Messaging is currently unavailable. No contact handles are disclosed.
             </span>
           </div>
         )}
@@ -429,7 +412,7 @@ const ConnectionDetailPanel: React.FC<DetailPanelProps> = ({ detail, onClose, lo
         </div>
         <CardDescription>
           {detail.visibilityPolicy === 'ONE_SIDED_VISIBLE_DEMO'
-            ? 'Visible as a demo-only policy. Production visibility rules are pending approval.'
+            ? 'Only the relationship details needed for connection management are shown.'
             : 'Mutual-only visibility.'}
         </CardDescription>
       </CardHeader>
@@ -483,11 +466,11 @@ const ConnectionDetailPanel: React.FC<DetailPanelProps> = ({ detail, onClose, lo
             )}
             <div className="p-2 rounded bg-craft-bg border border-craft-border space-y-1">
               <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-                <MessageSquare className="w-3 h-3" /> Messaging Policy (DEC-08)
+                <MessageSquare className="w-3 h-3" /> Messaging
               </p>
               <p className="text-[11px] text-craft-muted">
                 Messaging is disabled by default. No contact handles are revealed. Whether two modes share
-                a conversation is an unresolved demo policy decision, not production behavior.
+                conversations are not available in this release.
               </p>
             </div>
             <div className="pt-2 flex items-center gap-2 flex-wrap">

@@ -42,6 +42,23 @@ export function useBlockUser() {
   });
 }
 
+export function useUnblockUser() {
+  const { session } = useDemoAuth();
+  const actorId = session?.userId ?? 'anonymous';
+  const queryClient = useQueryClient();
+  return useMutation<{ blocked: boolean }, AppError, string>({
+    mutationFn: (targetUserId) => {
+      if (!session) return Promise.reject(new AppError('UNAUTHENTICATED', 'Sign in required'));
+      return appServices.moderation.unblockUser(targetUserId, { actorSession: session });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.moderation.all(actorId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.social.all(actorId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.connections.all(actorId) });
+    },
+  });
+}
+
 export function useMyReports() {
   const { session } = useDemoAuth();
   const actorId = session?.userId ?? 'anonymous';

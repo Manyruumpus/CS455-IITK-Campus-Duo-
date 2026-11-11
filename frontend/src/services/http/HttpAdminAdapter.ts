@@ -23,12 +23,10 @@ import {
   ErrorCode,
   AppErrorCode,
 } from '@/types';
-import { MockAdminService } from '../mock/MockAdminModerationServices';
 
 export interface HttpAdminAdapterOptions {
   baseUrl?: string;
   fetchFn?: typeof fetch;
-  mockFallback?: MockAdminService;
 }
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -53,7 +51,6 @@ function resolveBookingId(id: string): string {
 export class HttpAdminAdapter implements IAdminService {
   private readonly baseUrl: string;
   private readonly fetchFn: typeof fetch;
-  private readonly fallback: MockAdminService;
 
   constructor(options?: HttpAdminAdapterOptions) {
     const rawBaseUrl =
@@ -65,7 +62,6 @@ export class HttpAdminAdapter implements IAdminService {
     this.fetchFn =
       options?.fetchFn ??
       (typeof window !== 'undefined' ? window.fetch.bind(window) : globalThis.fetch);
-    this.fallback = options?.mockFallback ?? new MockAdminService();
   }
 
   private getAuthHeaders(context: ServiceContext, extraHeaders?: Record<string, string>): Record<string, string> {
@@ -148,9 +144,13 @@ export class HttpAdminAdapter implements IAdminService {
     }
   }
 
-  // --- Delegation to fallback for moderation / users / logs ---
   public async listModerationReports(context: ServiceContext): Promise<ModerationReport[]> {
-    return this.fallback.listModerationReports(context);
+    const response = await this.executeRequest<{ data: ModerationReport[] }>(
+      '/api/admin/reports',
+      { method: 'GET', headers: this.getAuthHeaders(context) },
+      context
+    );
+    return response.data;
   }
 
   public async resolveReport(
@@ -158,19 +158,42 @@ export class HttpAdminAdapter implements IAdminService {
     request: { action: 'DISMISS' | 'WARN_USER' | 'SUSPEND_USER'; reason: string; confirm: boolean },
     context: ServiceContext
   ): Promise<ModerationReport> {
-    return this.fallback.resolveReport(reportId, request, context);
+    const response = await this.executeRequest<{ data: ModerationReport }>(
+      `/api/admin/reports/${encodeURIComponent(reportId)}/review`,
+      {
+        method: 'POST',
+        headers: this.getAuthHeaders(context, { 'Content-Type': 'application/json' }),
+        body: JSON.stringify(request),
+      },
+      context
+    );
+    return response.data;
   }
 
   public async listAuditLogs(context: ServiceContext): Promise<AuditLogEntry[]> {
-    return this.fallback.listAuditLogs(context);
+    const response = await this.executeRequest<{ data: AuditLogEntry[] }>(
+      '/api/admin/audit-logs',
+      { method: 'GET', headers: this.getAuthHeaders(context) },
+      context
+    );
+    return response.data;
   }
 
   public async listUsers(search: string | undefined, context: ServiceContext): Promise<AdminUserSummary[]> {
-    return this.fallback.listUsers(search, context);
+    const queryString = search ? `?search=${encodeURIComponent(search)}` : '';
+    const response = await this.executeRequest<{ data: AdminUserSummary[] }>(
+      `/api/admin/users${queryString}`,
+      { method: 'GET', headers: this.getAuthHeaders(context) },
+      context
+    );
+    return response.data;
   }
 
   public async getUser(userId: string, context: ServiceContext): Promise<AdminUserSummary> {
-    return this.fallback.getUser(userId, context);
+    const users = await this.listUsers(userId, context);
+    const user = users.find((item) => item.userId === userId);
+    if (!user) throw new AppError(ErrorCode.NOT_FOUND, 'User not found.');
+    return user;
   }
 
   public async listBookings(filters: AdminBookingFilters, context: ServiceContext): Promise<BookingRecord[]> {
@@ -211,29 +234,27 @@ export class HttpAdminAdapter implements IAdminService {
 
   public async getDashboardSummary(context: ServiceContext): Promise<AdminDashboardSummary> {
     const headers = this.getAuthHeaders(context);
-    try {
-      const summaryRes = await this.executeRequest<{
-        data: {
-          systemStatus: string;
-          activeLocationsCount: number;
-          totalBookingsCount: number;
-          totalUsersCount: number;
-        };
-      }>('/api/admin/summary', { method: 'GET', headers }, context);
-
-      const resources = await this.listResources(context);
-      const activeTables = resources.reduce((acc, r) => acc + (r.active ? r.tableCount : 0), 0);
-
-      return {
-        activeLocations: summaryRes.data.activeLocationsCount,
-        activeTables,
-        confirmedBookings: summaryRes.data.totalBookingsCount,
-        pendingReports: 0,
-        auditEvents: 1,
+    const summaryRes = await this.executeRequest<{
+      data: {
+        systemStatus: string;
+        activeLocationsCount: number;
+        totalBookingsCount: number;
+        totalUsersCount: number;
+        pendingReportsCount: number;
+        auditEventsCount: number;
       };
-    } catch {
-      return this.fallback.getDashboardSummary(context);
-    }
+    }>('/api/admin/summary', { method: 'GET', headers }, context);
+
+    const resources = await this.listResources(context);
+    const activeTables = resources.reduce((acc, r) => acc + (r.active ? r.tableCount : 0), 0);
+
+    return {
+      activeLocations: summaryRes.data.activeLocationsCount,
+      activeTables,
+      confirmedBookings: summaryRes.data.totalBookingsCount,
+      pendingReports: summaryRes.data.pendingReportsCount,
+      auditEvents: summaryRes.data.auditEventsCount,
+    };
   }
 
   public async listResources(context: ServiceContext): Promise<AdminResourceSummary[]> {

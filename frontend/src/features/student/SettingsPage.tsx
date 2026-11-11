@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, AlertTriangle, UserX, ArrowRight, BookOpen, Users, CheckCircle, RotateCcw } from 'lucide-react';
+import { Shield, AlertTriangle, UserX, ArrowRight, BookOpen, Users } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -14,10 +14,8 @@ import {
   useBlockedUsers,
 } from '@/queries/consentHooks';
 import { usePrivateProfile } from '@/queries/profileHooks';
-import { useResetDemoState } from '@/queries/connectionHooks';
 import { AppError } from '@/types';
-import { appConfig } from '@/config/features';
-import { useMyReports } from '@/queries/moderationHooks';
+import { useMyReports, useUnblockUser } from '@/queries/moderationHooks';
 
 import { useDemoAuth } from '@/app/context/DemoAuthContext';
 
@@ -29,13 +27,11 @@ export const SettingsPage: React.FC = () => {
   const { data: profile } = usePrivateProfile();
   const { data: blockedUsers } = useBlockedUsers();
   const { data: myReports } = useMyReports();
+  const unblockMutation = useUnblockUser();
 
   const updateStudyConsentMutation = useUpdateStudyConsent();
   const updateSocialConsentMutation = useUpdateSocialConsent();
-  const resetDemoState = useResetDemoState();
-
   const [studyErrorNotice, setStudyErrorNotice] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const hasRequiredStudyFields = Boolean(
     profile &&
@@ -49,6 +45,12 @@ export const SettingsPage: React.FC = () => {
   const handleToggleStudyConsent = () => {
     setStudyErrorNotice(null);
     const nextState = !studyConsent?.hasConsent;
+
+    if (!nextState && !window.confirm(
+      'Pause study discovery? You will disappear from new matching and cannot create new study bookings. Existing booking history is preserved.'
+    )) {
+      return;
+    }
 
     // Amendment 3: Enabling study discovery later in Settings must enforce validation
     if (nextState && !hasRequiredStudyFields) {
@@ -80,6 +82,12 @@ export const SettingsPage: React.FC = () => {
 
   const handleToggleSocialConsent = () => {
     const nextState = !socialConsent?.hasConsent;
+
+    if (!nextState && !window.confirm(
+      'Pause social discovery? You will disappear from new social discovery results. Existing records are preserved.'
+    )) {
+      return;
+    }
 
     updateSocialConsentMutation.mutate(nextState, {
       onSuccess: (res) => {
@@ -210,10 +218,10 @@ export const SettingsPage: React.FC = () => {
             <div className="p-2.5 rounded bg-craft-base border border-craft-border text-[11px] text-craft-muted space-y-1">
               <div className="flex items-center gap-1.5 text-amber-400 font-medium">
                 <Shield className="w-3.5 h-3.5" />
-                <span>Open Policy Notice (DEC-09): Existing Connection Persistence</span>
+                <span>Existing connections</span>
               </div>
               <p className="leading-relaxed">
-                Whether existing connections remain accessible after discovery opt-out is an open decision. In this demonstration, opting out pauses public discovery feeds without silently deleting existing peer relationships.
+                Opting out pauses new discovery while preserving existing peer relationships. You can manage those relationships from their respective connection pages.
               </p>
             </div>
           </div>
@@ -225,7 +233,7 @@ export const SettingsPage: React.FC = () => {
         <CardHeader>
           <CardTitle>Moderation & Blocked Accounts</CardTitle>
           <CardDescription>
-            Accounts you have filtered or reported. Unblocking workflows remain pending policy.
+            Accounts you have filtered or reported. Unblocking removes the bilateral restriction for future discovery and booking.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -242,14 +250,26 @@ export const SettingsPage: React.FC = () => {
               </div>
             </div>
             <Badge variant="outline" className="text-[10px]">
-              Pending Policy (DEC-09)
+              {blockedUsers?.length ?? 0} active
             </Badge>
           </div>
-
-          <div className="p-2.5 rounded bg-craft-base border border-craft-border text-[11px] text-craft-muted flex items-center gap-2">
-            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <span>Unblock side effects are disabled pending student senate governance policy.</span>
-          </div>
+          {blockedUsers && blockedUsers.length > 0 && (
+            <div className="space-y-2">
+              {blockedUsers.map((userId) => (
+                <div key={userId} className="flex items-center justify-between gap-3 p-2.5 rounded bg-craft-base border border-craft-border text-xs">
+                  <span className="font-mono text-craft-muted">{userId}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    isLoading={unblockMutation.isPending && unblockMutation.variables === userId}
+                    onClick={() => unblockMutation.mutate(userId)}
+                  >
+                    Unblock
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="p-3.5 rounded-lg bg-craft-surface border border-craft-border text-xs">
             <div className="flex items-center justify-between">
               <span className="font-medium text-craft-ink">Your report receipts</span>
@@ -277,7 +297,7 @@ export const SettingsPage: React.FC = () => {
         <CardHeader>
           <CardTitle>Account Deletion & Data Retention</CardTitle>
           <CardDescription>
-            Campus account retention and data deletion guidelines (DEC-12).
+            Campus account retention and data deletion guidelines.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -285,83 +305,16 @@ export const SettingsPage: React.FC = () => {
             <div>
               <span className="font-semibold text-craft-ink">Permanent Account Purge</span>
               <p className="text-[11px] text-craft-muted mt-0.5">
-                Account deletion and data retention remain pending team/user-approved retention policy.
+                Account deletion is not available from this release. Contact campus support for account-retention questions.
               </p>
             </div>
             <Button variant="outline" size="sm" disabled>
-              Pending Policy (DEC-12)
+              Not available
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {appConfig.isDemoAuthEnabled && (
-        <Card variant="craft" data-testid="demo-reset-card">
-          <CardHeader>
-            <CardTitle>Demo Scenario Reset</CardTitle>
-            <CardDescription>
-              Coordinated full demo-state reset. Clears mock store data, study/social Like maps,
-              scenario state, and UI caches. For demonstration purposes only.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="p-3 rounded border border-amber-500/40 bg-amber-950/10 text-[11px] text-craft-muted space-y-1.5">
-              <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
-                <Shield className="w-3.5 h-3.5" />
-                Reset affects only in-memory mock services
-              </div>
-              <p>
-                This is NOT a production data action. Production backend adapters continue to throw
-                SERVICE_UNAVAILABLE for reset.
-              </p>
-            </div>
-
-            {!confirmReset ? (
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={() => setConfirmReset(true)}
-                leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
-                disabled={resetDemoState.isPending}
-                aria-label="Initiate coordinated demo reset"
-              >
-                Reset Demo State
-              </Button>
-            ) : (
-              <div className="space-y-3 p-3 rounded bg-craft-surface border border-craft-border">
-                <p className="text-[11px] text-craft-muted">
-                  Confirm that you want to reset mock store, Like maps, scenario state, and UI caches
-                  back to seeded baseline. This action cannot be undone inside the mock runtime.
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => {
-                      resetDemoState.mutate(undefined, {
-                        onSuccess: () => setConfirmReset(false),
-                        onError: () => setConfirmReset(false),
-                      });
-                    }}
-                    isLoading={resetDemoState.isPending}
-                    leftIcon={<CheckCircle className="w-3.5 h-3.5" />}
-                  >
-                    Confirm Reset
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setConfirmReset(false)}
-                    disabled={resetDemoState.isPending}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

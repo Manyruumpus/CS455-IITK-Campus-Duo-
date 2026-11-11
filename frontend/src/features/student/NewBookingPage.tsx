@@ -137,7 +137,7 @@ export const NewBookingPage: React.FC = () => {
             <CardTitle>Session Details</CardTitle>
             <Badge variant="outline" className="text-[10px]">
               {appConfig.demoPartnerApprovalPolicy === 'AUTO_APPROVED_DEMO'
-                ? 'Demo Policy: Auto-Approved (Provisional — Pending team/user approval)'
+                ? 'Partner confirmation: automatic'
                 : 'Requires Explicit Approval'}
             </Badge>
           </div>
@@ -159,7 +159,7 @@ export const NewBookingPage: React.FC = () => {
           </div>
 
           <div className="p-2.5 rounded bg-craft-surface border border-craft-border text-xs flex justify-between items-center">
-            <span className="text-craft-muted">Operation ID (Proposed Frontend Contract):</span>
+            <span className="text-craft-muted">Booking reference:</span>
             <span className="font-mono text-craft-ink text-[11px]">{clientOperationId}</span>
           </div>
 
@@ -181,7 +181,7 @@ export const NewBookingPage: React.FC = () => {
               ))}
             </select>
             <p className="text-[11px] text-craft-subtle">
-              Selecting an ineligible contact demonstrates reciprocal study partner verification enforcement.
+              Only mutual study connections can be selected. Eligibility is verified by the server.
             </p>
           </div>
 
@@ -254,12 +254,10 @@ export const NewBookingPage: React.FC = () => {
           <div className="p-3 rounded-lg bg-craft-surface border border-craft-border text-xs text-craft-muted space-y-1.5">
             <div className="flex items-center gap-1.5 text-craft-ink font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Demonstration Assumptions (Provisional — DEC-11)</span>
+              <span>Reservation details</span>
             </div>
             <p className="text-[11px] leading-relaxed">
-              • Two-hour session limits and advance booking windows are unapproved demonstration assumptions under DEC-11, not official campus policy.
-              <br />
-              • Table reservation transactions are simulated in this interface.
+              Review the selected partner, location, date, and time before confirming. Availability is checked by the server when you submit.
             </p>
           </div>
         </CardContent>

@@ -385,7 +385,7 @@ export const OnboardingPage: React.FC = () => {
           <CardHeader>
             <CardTitle>2. Basic Profile & Credentials</CardTitle>
             <CardDescription>
-              Demo fixture data. Production credential source and edit policy remain unresolved (DEC-05).
+              Your institutional identity is protected. Review the details below and add the preferences you want to share.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -405,7 +405,7 @@ export const OnboardingPage: React.FC = () => {
             <div className="p-3.5 rounded-lg bg-craft-surface border border-craft-border text-xs space-y-2">
               <div className="flex items-center gap-1.5 text-craft-ink font-medium">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Read-Only Demo Academic Fixtures</span>
+                <span>Protected Academic Identity</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] text-craft-muted">
                 <div>
@@ -426,7 +426,7 @@ export const OnboardingPage: React.FC = () => {
                 </div>
               </div>
               <p className="text-[10px] text-craft-subtle pt-1 border-t border-craft-border">
-                Identity and academic fields are protected read-only demo fixtures. Changes are rejected by the service boundary.
+                Identity and academic fields are supplied by your institutional account and cannot be changed from Campus Duo.
               </p>
             </div>
           </CardContent>
@@ -561,7 +561,7 @@ export const OnboardingPage: React.FC = () => {
           <CardHeader>
             <CardTitle>4. Campus Social Preferences</CardTitle>
             <CardDescription>
-              Generic club and hobby interest tags. Dating-specific preferences are strictly deferred (DEC-01).
+              Add the interests you want to share with potential social connections.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -681,7 +681,7 @@ export const OnboardingPage: React.FC = () => {
             <div className="p-3 rounded bg-craft-surface border border-craft-border text-[11px] text-craft-muted space-y-1">
               <span className="font-semibold text-craft-ink block">Privacy & Booking Boundaries:</span>
               <p>
-                • Discovery consent makes your profile visible in matching feeds. It does <strong>not</strong> authorize contact handle disclosure (DEC-08).
+                • Discovery consent makes your profile visible in matching feeds. It does <strong>not</strong> authorize contact handle disclosure.
               </p>
               <p>
                 • Discovery consent does <strong>not</strong> grant any peer authority to reserve table seats on your behalf.
@@ -705,7 +705,7 @@ export const OnboardingPage: React.FC = () => {
         </Card>
       )}
 
-      {/* STEP 6: Review & Save (Amendment 3: Transactional Mock Save) */}
+      {/* STEP 6: Review & Save */}
       {step === 6 && (
         <Card variant="craft">
           <CardHeader>

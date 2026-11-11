@@ -218,4 +218,61 @@ export class ProfileService {
 
     return this.getProfile(userId);
   }
+
+  public async updateConsent(
+    userId: string,
+    mode: 'STUDY' | 'SOCIAL',
+    hasConsent: boolean
+  ): Promise<{ hasConsent: boolean; consentedAt?: string }> {
+    const client = await getClient();
+    try {
+      await client.query('BEGIN');
+      const current = await client.query<{ has_consent: boolean; consented_at: string | null }>(
+        `SELECT has_consent, consented_at
+           FROM campus_duo.consent_record
+          WHERE user_id = $1 AND mode = $2`,
+        [userId, mode]
+      );
+      const previous = current.rows[0];
+      const now = new Date();
+      const result = await client.query<{ has_consent: boolean; consented_at: string | null }>(
+        `INSERT INTO campus_duo.consent_record
+          (user_id, mode, has_consent, consented_at, revoked_at, policy_version, updated_at)
+         VALUES ($1, $2, $3, CASE WHEN $3 THEN COALESCE($4, now()) ELSE $4 END,
+                 CASE WHEN $3 THEN NULL ELSE CASE WHEN $4 IS NULL THEN now() ELSE now() END END,
+                 'MVP-1', now())
+         ON CONFLICT (user_id, mode) DO UPDATE
+           SET has_consent = EXCLUDED.has_consent,
+               consented_at = CASE WHEN EXCLUDED.has_consent THEN COALESCE(campus_duo.consent_record.consented_at, EXCLUDED.consented_at) ELSE campus_duo.consent_record.consented_at END,
+               revoked_at = CASE WHEN EXCLUDED.has_consent THEN NULL ELSE now() END,
+               policy_version = EXCLUDED.policy_version,
+               updated_at = now()
+         RETURNING has_consent, consented_at`,
+        [userId, mode, hasConsent, previous?.consented_at ?? null]
+      );
+      const updated = result.rows[0];
+      await client.query(
+        `INSERT INTO campus_duo.consent_history
+          (user_id, mode, event_type, has_consent, policy_version, source)
+         VALUES ($1, $2, $3, $4, 'MVP-1', 'USER_SETTINGS')`,
+        [userId, mode, previous ? (previous.has_consent === hasConsent ? 'UPDATED' : hasConsent ? 'GRANTED' : 'REVOKED') : hasConsent ? 'GRANTED' : 'REVOKED', hasConsent]
+      );
+      await client.query(
+        `INSERT INTO campus_duo.audit_event
+          (actor_user_id, actor_role, action, target_type, target_id, outcome, safe_reason)
+         VALUES ($1, 'ROLE_STUDENT', $2, 'CONSENT', $1, 'SUCCESS', $3)`,
+        [userId, `${mode}_CONSENT_${hasConsent ? 'GRANTED' : 'REVOKED'}`, `User ${hasConsent ? 'granted' : 'revoked'} ${mode.toLowerCase()} consent`]
+      );
+      await client.query('COMMIT');
+      return {
+        hasConsent: Boolean(updated.has_consent),
+        consentedAt: updated.consented_at ? new Date(updated.consented_at).toISOString() : undefined,
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }

@@ -266,10 +266,8 @@ export const SocialDiscoveryPage: React.FC = () => {
         </div>
       )}
 
-      {/* Footer note — mock qualification */}
       <p className="text-[11px] text-craft-muted text-center">
-        Social discovery connected to in-memory mock service. No real backend integration.
-        Messaging is disabled. Contact disclosure is not implemented.
+        Social connections are privacy-controlled. Contact details are never shared automatically.
       </p>
     </div>
   );

@@ -96,7 +96,7 @@ export const BookingDetailPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-xl mx-auto">
       <PageHeader
-        title="Reservation Pass (Simulation)"
+        title="Reservation Details"
         subtitle={`Booking Reference: #${booking.bookingId}`}
         breadcrumbs={[
           { label: 'Dashboard', href: '/app/dashboard' },
@@ -117,11 +117,6 @@ export const BookingDetailPage: React.FC = () => {
           </div>
           <CardTitle className="text-xl flex flex-col items-center gap-1.5">
             <span>{booking.locationName} — Table {booking.tableNumber}</span>
-            {(booking.locationName.includes('[SYNTHETIC') || booking.locationName.includes('DEV SEED')) && (
-              <span className="inline-block px-2.5 py-0.5 text-[10px] font-normal bg-amber-950/40 text-amber-300 border border-amber-500/40 rounded-full tracking-wide">
-                Development Seed Facility (Simulation Only — Not an operational IITK room)
-              </span>
-            )}
           </CardTitle>
           <CardDescription>
             Date: {booking.localDate} · 2 Seats (Canonical Pair)
@@ -129,18 +124,11 @@ export const BookingDetailPage: React.FC = () => {
         </CardHeader>
 
         <CardContent className="space-y-6 text-center">
-          {/* Simulated QR Code with explicit non-validity notice */}
           <div className="w-56 mx-auto rounded-xl bg-craft-surface border border-craft-borderMedium flex flex-col items-center justify-center p-4 space-y-2">
             <QrCode className="w-24 h-24 text-ember-400" />
             <span className="font-mono text-[10px] text-craft-muted">
-              SIMULATED TOKEN: {booking.bookingId.toUpperCase()}
+              Booking reference: {booking.bookingId.toUpperCase()}
             </span>
-            <div className="p-2 rounded bg-amber-950/40 border border-amber-500/40 text-[10px] text-amber-300 leading-tight flex items-start gap-1.5 text-left">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-400 mt-0.5" />
-              <span>
-                Not a valid physical pass. Physical check-in and CHECKED_IN status are deferred (amendment 1).
-              </span>
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs text-left">
@@ -149,12 +137,12 @@ export const BookingDetailPage: React.FC = () => {
               <p className="font-semibold text-craft-ink">
                 {booking.timeWindow}
               </p>
-              <span className="text-[10px] text-craft-subtle">Duration is a demo assumption</span>
+              <span className="text-[10px] text-craft-subtle">Reserved for your selected study session</span>
             </div>
             <div className="p-3 rounded bg-craft-surface border border-craft-border">
-              <span className="text-craft-muted">Operation ID (Frontend):</span>
+              <span className="text-craft-muted">Booking reference:</span>
               <p className="font-semibold font-mono text-craft-ink truncate">
-                {booking.clientOperationId ?? 'legacy-mock'}
+                {booking.clientOperationId ?? booking.bookingId}
               </p>
               <span className="text-[10px] text-craft-subtle">Stable attempt token</span>
             </div>
@@ -188,9 +176,9 @@ export const BookingDetailPage: React.FC = () => {
             <div className="p-3 rounded bg-amber-950/30 border border-amber-500/30 text-xs text-amber-200 flex items-start gap-2 text-left">
               <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">Companion Read-Only Mode (Demo Policy)</p>
+                <p className="font-semibold">Companion access</p>
                 <p className="text-[11px] text-amber-300">
-                  Under current configured demo policy, only the booking creator or administrator may cancel or reschedule this reservation.
+                  Only the booking creator or an administrator can cancel or reschedule this reservation.
                 </p>
               </div>
             </div>

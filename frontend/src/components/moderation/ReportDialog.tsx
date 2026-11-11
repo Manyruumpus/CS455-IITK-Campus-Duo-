@@ -37,7 +37,7 @@ export const ReportDialog: React.FC<{
             variant="danger"
             size="sm"
             onClick={submit}
-            disabled={description.length > 500 || mutation.isPending || mutation.isSuccess}
+            disabled={!description.trim() || description.length > 500 || mutation.isPending || mutation.isSuccess}
             isLoading={mutation.isPending}
           >
             Submit report
@@ -55,11 +55,12 @@ export const ReportDialog: React.FC<{
         >
           {reasons.map((reason) => <option key={reason} value={reason}>{reason.replace(/_/g, ' ')}</option>)}
         </select>
-        <label className="block text-xs font-medium" htmlFor="report-description">Description (optional)</label>
+        <label className="block text-xs font-medium" htmlFor="report-description">Description</label>
         <textarea
           id="report-description"
           value={description}
           onChange={(event) => setDescription(event.target.value)}
+          required
           maxLength={500}
           rows={4}
           className="w-full rounded-md border border-craft-border bg-craft-base px-3 py-2 text-xs"

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
 
 export const AuthLayout: React.FC = () => {
   return (
@@ -16,10 +15,7 @@ export const AuthLayout: React.FC = () => {
           <span>Back to Home</span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <Badge variant="mono">Authentication</Badge>
-          <Badge variant="warning">Demo Environment</Badge>
-        </div>
+        <span className="text-xs text-craft-muted">Secure institutional sign-in</span>
       </header>
 
       {/* Main Auth Form Container */}
@@ -31,7 +27,7 @@ export const AuthLayout: React.FC = () => {
       <footer className="text-center text-xs text-craft-muted max-w-md mx-auto space-y-2">
         <div className="flex items-center justify-center gap-1.5 text-craft-subtle">
           <Shield className="w-3.5 h-3.5" />
-          <span>Authentication integration pending · Demonstration environment</span>
+          <span>Institutional access for enrolled IIT Kanpur students</span>
         </div>
         <p className="text-[11px] text-craft-subtle">
           Campus Duo is designed for enrolled IIT Kanpur students.

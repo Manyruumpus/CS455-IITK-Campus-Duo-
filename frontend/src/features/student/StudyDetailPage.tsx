@@ -219,11 +219,11 @@ export const StudyDetailPage: React.FC = () => {
                   Compatibility Factor Breakdown
                 </CardTitle>
                 <Badge variant="ember">
-                  {aiMatchScore}% Compatibility (Demo)
+                  {aiMatchScore}% Compatibility
                 </Badge>
               </div>
               <CardDescription>
-                Calculated via proposed demo formula (35C + 25T + 10Style + 10Pace + 10Loc + 10Goals) with active weight renormalization.
+                Based on shared courses, study preferences, pace, and availability.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

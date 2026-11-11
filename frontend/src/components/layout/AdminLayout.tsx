@@ -30,10 +30,15 @@ export const AdminLayout: React.FC = () => {
     document.documentElement.setAttribute('data-theme', nextTheme);
   };
 
-  const adminNavItems = [
+  const adminNavItems: Array<{
+    label: string;
+    path: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string;
+  }> = [
     { label: 'Admin Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
     { label: 'User Directory', path: '/admin/users', icon: Users },
-    { label: 'Moderation Queue', path: '/admin/reports', icon: ShieldAlert, badge: '3' },
+    { label: 'Moderation Queue', path: '/admin/reports', icon: ShieldAlert },
     { label: 'Table & Room Inventory', path: '/admin/tables', icon: CalendarDays },
     { label: 'Campus Reservations', path: '/admin/bookings', icon: BookmarkCheck },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: FileText },

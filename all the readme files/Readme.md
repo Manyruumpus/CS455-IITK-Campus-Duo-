@@ -6,7 +6,7 @@
 
 Campus Duo is an institutional platform designed for verified IIT Kanpur students to discover compatible study partners and reserve capacity-limited study spaces upon mutual study consent. It integrates deterministic, explainable compatibility matching with a strictly governed Agentic AI assistant (`qwen2.5vl:3b` via local Ollama or hosted Hugging Face router, with deterministic offline fallback).
 
-The project is built around software engineering rigor: atomic PostgreSQL transactions, strict participant authorization, robust concurrency handling (guaranteeing zero double-bookings), rigorous PII redaction, full profile persistence, and 100% passing automated test coverage across 491 tests.
+The project is built around software engineering rigor: atomic PostgreSQL transactions, strict participant authorization, robust concurrency handling, PII minimization, and persistent profile and booking workflows. Automated verification artifacts in this repository are historical evidence and are not re-run as part of the current implementation pass.
 
 ---
 
@@ -29,7 +29,7 @@ All project deliverables and engineering evidence are organized under the reposi
 ### Deliverable 3 (D3)
 - [`Deliverables/D3/D3_Final_Project_Report.md`](Deliverables/D3/D3_Final_Project_Report.md): Executive summary, architectural review, and project post-mortem.
 - [`Deliverables/D3/AI_Engineering_Log.md`](Deliverables/D3/AI_Engineering_Log.md): Consolidated AI engineering audit trail.
-- [`Deliverables/D3/Testing_Report.md`](Deliverables/D3/Testing_Report.md): Multi-tiered automated test suite documentation (223 backend tests + 268 frontend tests = 491 total).
+- [`Deliverables/D3/Testing_Report.md`](Deliverables/D3/Testing_Report.md): Historical automated test-suite documentation; current-pass verification is intentionally deferred.
 - [`Deliverables/D3/Adversarial_Test_Report.md`](Deliverables/D3/Adversarial_Test_Report.md): 16-test adversarial safety suite and prompt injection audit (KAN-79).
 - [`Deliverables/D3/Defect_History.md`](Deliverables/D3/Defect_History.md): Register of 8 verified, resolved, and regression-tested defects (DEF-01 through DEF-08).
 - [`Deliverables/D3/Final_Traceability_Matrix.csv`](Deliverables/D3/Final_Traceability_Matrix.csv): End-to-end traceability matrix mapping all FRs, NFRs, and D3 items to source code, tests, and Git commits.
@@ -128,11 +128,16 @@ Ensure PostgreSQL is running locally on port 5432, then apply migrations and bas
 # Navigate to database directory
 cd database
 
-# Apply schema migrations (as superuser / postgres)
-psql -U postgres -d postgres -f migrations/01_schema_init.sql
+# Validate and apply the ordered Flyway migrations as campus_duo_migrator.
+# The migration directory contains V001__schema_conventions.sql through
+# V012__consent_moderation_runtime_grants.sql.
+flyway -configFiles=config/flyway.toml info
+flyway -configFiles=config/flyway.toml validate
+flyway -configFiles=config/flyway.toml migrate
 
-# Seed development catalog & test peers
-psql -U postgres -d campus_duo_dev -f seeds/02_development_seed.sql
+# Optional development-only synthetic fixtures. This script refuses the
+# wrong database or role and must never be run against production.
+psql -X -v ON_ERROR_STOP=1 -U campus_duo_migrator -d campus_duo_dev -f seeds/02_development_seed.sql
 ```
 
 ### 3. Backend Configuration & Startup
@@ -174,15 +179,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## Automated Verification & Test Suites
+## Verification Status
 
-The project includes 491 automated tests across 46 test suites, achieving 100% pass rate:
+Automated suites and coverage are intentionally deferred for the current implementation pass. Existing test files and tooling are preserved. Run them separately when updated evidence is required.
 
 ### Backend Test Execution (Vitest)
 ```powershell
 cd backend
 
-# Run all backend test suites
+# Deferred: run backend test suites separately when updated evidence is required
 npx vitest run
 
 # Run specific integration suites
@@ -194,7 +199,7 @@ npx vitest run tests/concurrency.race.test.ts tests/agent.safety.test.ts
 ```powershell
 cd frontend
 
-# Run all frontend unit and component tests
+# Deferred: run frontend test suites separately when updated evidence is required
 npm test
 
 # Run profile and auth persistence tests

@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Calendar,
   Settings,
-  ShieldAlert,
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
@@ -108,7 +107,9 @@ export const StudyRequestsPage: React.FC = () => {
         }
       />
 
-      <DemoPolicyNotice />
+      <div className="p-3 rounded-xl border border-craft-border bg-craft-surface text-[11px] leading-relaxed text-craft-muted">
+        Mutual study connections are the only relationships eligible for booking. One-sided requests remain visible until they are matched or withdrawn.
+      </div>
 
       <div
         className="flex flex-wrap items-center gap-2 p-1 bg-craft-surface border border-craft-border rounded-lg w-fit"
@@ -176,7 +177,7 @@ export const StudyRequestsPage: React.FC = () => {
           </CardTitle>
           <CardDescription>
             {activeTab === 'ALL'
-              ? 'Requests, pending states and confirmed partnerships. Decline/Withdrawal is not implemented in current demo policy.'
+              ? 'Requests, pending states, and confirmed partnerships.'
               : activeTab === 'INCOMING'
               ? 'Peers who have liked your study profile. Use Like Back to confirm mutual partnership.'
               : activeTab === 'OUTGOING'
@@ -241,7 +242,7 @@ export const StudyRequestsPage: React.FC = () => {
                     type: 'info',
                     title: 'Action Unavailable',
                     description:
-                      'Decline/Withdrawal/Disconnect is not implemented under the current demo policy. Reciprocal LIKE is required for a confirmed connection.',
+                      'This action is not available for the current relationship. Reciprocal interest is required for a confirmed connection.',
                   })
                 }
                 onViewDetail={() => setDetailConnectionId(item.connectionId)}
@@ -270,20 +271,6 @@ export const StudyRequestsPage: React.FC = () => {
     </div>
   );
 };
-
-const DemoPolicyNotice: React.FC = () => (
-  <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-950/10 text-[11px] leading-relaxed space-y-1">
-    <div className="flex items-center gap-1.5 text-amber-300 font-semibold">
-      <ShieldAlert className="w-3.5 h-3.5" />
-      Demo-visible policy — not an approved production rule
-    </div>
-    <p className="text-craft-muted">
-      One-sided Like lists (Incoming / Outgoing) are visible in this demo only. Production visibility,
-      withdrawal, disconnect and post-opt-out retention policies are still unresolved. Mutual STUDY
-      connections are the only relationships eligible for booking workflows.
-    </p>
-  </div>
-);
 
 interface SummaryCardProps {
   item: ConnectionSummaryItem;
@@ -416,7 +403,7 @@ const ConnectionDetailPanel: React.FC<DetailPanelProps> = ({ detail, onClose, lo
         </div>
         <CardDescription>
           {detail.visibilityPolicy === 'ONE_SIDED_VISIBLE_DEMO'
-            ? 'Visible as a demo-only policy. Production visibility rules are pending approval.'
+            ? 'Only the relationship details needed for connection management are shown.'
             : 'Mutual-only visibility.'}
         </CardDescription>
       </CardHeader>

@@ -81,7 +81,7 @@ export const MarketingLayout: React.FC = () => {
 
             <Link to="/login" className="hidden sm:inline-block">
               <Button variant="ember" size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                Demo Sign In
+                Sign In
               </Button>
             </Link>
 
@@ -153,31 +153,20 @@ export const MarketingLayout: React.FC = () => {
               <li><Link to="/app/study" className="hover:text-craft-ink">Course Matcher</Link></li>
               <li><Link to="/app/social" className="hover:text-craft-ink">Social Discovery</Link></li>
               <li><Link to="/app/booking" className="hover:text-craft-ink">Table Booking (2-Person)</Link></li>
-              <li><Link to="/preview/design-system" className="hover:text-craft-ink">Design Tokens Preview</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="font-semibold text-xs text-craft-ink uppercase tracking-wider mb-3">Architecture</h3>
-            <ul className="space-y-2 text-xs">
-              <li><span className="text-craft-muted">React 18 + TypeScript + Vite</span></li>
-              <li><span className="text-craft-muted">Kyoto Woodshop Aesthetic</span></li>
-              <li><span className="text-craft-muted">WCAG AA/AAA Contrast Target</span></li>
-              <li><span className="text-craft-muted">Server-Authoritative Bookings</span></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-xs text-craft-ink uppercase tracking-wider mb-3">Notice</h3>
+            <h3 className="font-semibold text-xs text-craft-ink uppercase tracking-wider mb-3">Privacy</h3>
             <p className="text-[11px] text-craft-muted leading-relaxed">
-              Academic student project for IIT Kanpur CS455. Campus Duo is not a commercial dating application.
+              Study and social discovery are separate opt-in experiences. Personal contact details are never shared automatically.
             </p>
           </div>
         </div>
 
         <div className="max-w-6xl mx-auto pt-6 border-t border-craft-border/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-craft-subtle font-mono">
-          <p>© 2026 Campus Duo · IIT Kanpur · Stage 02 Application Shell</p>
-          <p>Review-Gated Antigravity Architecture</p>
+          <p>© 2026 Campus Duo · IIT Kanpur</p>
+          <p>Built for focused campus study</p>
         </div>
       </footer>
     </div>

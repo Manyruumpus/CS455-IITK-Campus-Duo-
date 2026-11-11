@@ -7,7 +7,7 @@ import { useAdminAudits } from '@/queries/adminHooks';
 export const AdminAuditLogsPage: React.FC = () => {
   const query = useAdminAudits();
   return <div className="space-y-6">
-    <PageHeader title="Administrative Audit Stream" subtitle="Redacted append-only mock records; no durability or tamper-resistance claim." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Audit Logs', isCurrent: true }]} />
+    <PageHeader title="Administrative Audit History" subtitle="Review recorded administrative actions and system events." breadcrumbs={[{ label: 'Admin', href: '/admin/dashboard' }, { label: 'Audit Logs', isCurrent: true }]} />
     {query.isError && <p role="alert" className="text-sm text-red-300">{query.error.message}</p>}
     <TableWrapper caption="Redacted administrative audit records">
       <thead><tr><th className="p-3">Event</th><th className="p-3">Actor</th><th className="p-3">Action</th><th className="p-3">Target</th><th className="p-3">Outcome</th><th className="p-3">Reason</th><th className="p-3">Timestamp</th></tr></thead>

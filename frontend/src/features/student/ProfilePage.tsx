@@ -164,37 +164,37 @@ const ProfileEditForm: React.FC<ProfileEditFormProps> = ({ profile }) => {
 
   return (
     <div className="space-y-6">
-      {/* Section 1: Read-Only Academic Fixtures (Amendment 1) */}
+      {/* Section 1: Protected academic identity */}
       <Card variant="craft">
         <CardHeader>
           <CardTitle>Academic Enrollment Details</CardTitle>
           <CardDescription>
-            Demo fixture data. Production credential source and edit policy remain unresolved (DEC-05).
+            Academic identity fields are provided by your institutional account and cannot be edited here.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               id="profile-email"
-              label="Campus Email (Read-Only Demo Fixture)"
+              label="Campus Email (Read-only)"
               value={profile.email}
               disabled
             />
             <Input
               id="profile-roll"
-              label="Roll Number (Read-Only Demo Fixture)"
+              label="Roll Number (Read-only)"
               value={profile.rollNumber}
               disabled
             />
             <Input
               id="profile-dept"
-              label="Department (Read-Only Demo Fixture)"
+              label="Department (Read-only)"
               value={profile.department}
               disabled
             />
             <Input
               id="profile-degree"
-              label="Degree & Year (Read-Only Demo Fixture)"
+              label="Degree & Year (Read-only)"
               value={`${profile.degree} (Year ${profile.year})`}
               disabled
             />
@@ -477,7 +477,7 @@ export const ProfilePage: React.FC = () => {
               Permission-Filtered Public Previews
             </span>
             <p className="text-craft-muted text-[11px] leading-relaxed">
-              These views demonstrate how other authenticated students perceive your profile in public discovery feeds. Verified credentials (roll number, email, phone) and internal recommendation scores are strictly excluded.
+              These views show how other authenticated students see your public profile. Verified credentials and internal recommendation scores are strictly excluded.
             </p>
           </div>
 
